@@ -37,25 +37,43 @@ end
 --//Checks for game validity when a player leaves, in case a team is left without a player
 --//Only for Terrorist and President team, game will naturally conclude on its own if all of the bodyguards leave
 function GM:CheckGameValidityAfterPlayerLeave()
-    if not self.GameInProgress or not self.RoundInProgress then return end
+    if not self.GameInProgress then return end
 
     local numberAlive = 0
     for k, v in pairs( team.GetPlayers( 1 ) ) do --Terrorist team
         if v:Alive() then
-            numberAlive = numberAlive + 1
+            numberAlive = numberAlive + 1 --Count the amount of players on the Terrorist team, only 1 is truly needed
         end
     end
-    if numberAlive == 0 then
-        self:EndRound( 0 )
-        for k, ply in pairs( player.GetAll() ) do --Notify players
-            ply:ChatPrint( "[RL]: No Rebels detected on Rebel team, forcing round over." )
+    if numberAlive == 0 then --If there's no players on the terrorist team
+        if #player.GetAll() < self.MinimumPlayers then --If there's not enough players in the game to even play
+            for k, ply in pairs( player.GetAll() ) do --Notify players
+                ply:ChatPrint( "[RL]: Someone left the game, there are now not enough players to continue playing." )
+            end
+            self.GameInProgress = false
+            return end
+        end
+        if self.RoundInProgress then --If we're in the middle of running around when the last player leaves
+            self:EndRound( 0 ) --End the round with winner as 0
+            for k, ply in pairs( player.GetAll() ) do --Notify players
+                ply:ChatPrint( "[RL]: No Rebels detected on Rebel team, forcing round over." )
+            end
         end
     end
 
     if #team.GetPlayers( 3 ) == 0 then --President team
-        self:EndRound( 1 )
-        for k, ply in pairs( player.GetAll() ) do --Notify players
-            ply:ChatPrint( "[RL]: Breen player no longer detected in game, forcing round over." )
+        if #player.GetAll() < self.MinimumPlayers then
+            for k, ply in pairs( player.GetAll() ) do --Notify players
+                ply:ChatPrint( "[RL]: Someone left the game, there are now not enough players to continue playing." )
+            end
+            self.GameInProgress = false
+            return end
+        end
+        if self.RoundInProgress then
+            self:EndRound( 1 )
+            for k, ply in pairs( player.GetAll() ) do --Notify players
+                ply:ChatPrint( "[RL]: Breen player no longer detected in game, forcing round over." )
+            end
         end
     end
 end
@@ -80,12 +98,4 @@ end
 --//Disables player-directed respawning (when clicking or pressing space)
 function GM:PlayerDeathThink( ply )
 	return false
-end
-
---//This function is used for running game-end logic if the president player dies
-function GM:PlayerDeath( victim, inflictor, attacker )
-    if not self.GameInProgress or not self.RoundInProgress then return end
-    if victim:GetTeam() == 3 then
-        self:EndRound( 1 )
-    end
 end

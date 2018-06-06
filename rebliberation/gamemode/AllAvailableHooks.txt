@@ -1,0 +1,10 @@
+A list of hooks you can use in addons and scripts
+
+Server Hooks:
+OnGameStart - Occurs after enough players have spawned into the server to run the game, at the same time as AdditionalGameStartWaitTime countdown starts
+OnRoundSetup - Occurs after AdditionalGameStartWaitTime has counted down, at the same time as Team Setup and RunRoleInteraction
+OnRoundStart - Occurs after setup is finished (PreRoundSetupLength + RoundSetupLength), right as players are set loose to play
+OnRoundEnd - Occurs after one of the two victory conditions (or enough certain players have left) have been met, at the start of PostRoundLength
+OnGameEnd - Occurs after all rounds have been run, and at the start of map voting (if additional supported maps are installed)
+
+Client Hooks:

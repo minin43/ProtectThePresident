@@ -10,6 +10,10 @@ end )
 hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
     if not GAMEMODE.GameInProgress then --If there isn't a game currently running
         if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning is only just joining
+            print( ply:Nick() .. " has fully connected to the game." )
+            for k, v in pairs( player.GetAll() ) do
+                v:ChatPrint( "[RL]: " .. ply:Nick() .. " has fully connected to the game." )
+            end
             ply:KillSilent() --May need to remove
             GAMEMODE.JoiningPlayers[ply:SteamID()] = false
             if #player.GetAll() >= GAMEMODE.MinimumPlayers then --If the current amount of players exceeds the minimum required to play
@@ -18,6 +22,10 @@ hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
         end
     else --If there IS a game in progress
         if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning is only just joining
+            print( ply:Nick() .. " has fully connected to the game." )
+            for k, v in pairs( player.GetAll() ) do
+                v:ChatPrint( "[RL]: " .. ply:Nick() .. " has fully connected to the game." )
+            end
             GAMEMODE.JoiningPlayers[ply:SteamID()] = false
             ply:SetTeam( 1 ) --A player can't be assigned as president or a bodyguard halfway through the round, so auto-set them to terrorist team
             self:RunRoleIntroduction( ply )
@@ -30,7 +38,7 @@ function GM:InitiallySetupTeams()
     if not self.GameInProgress then return end
     PlayerTable = player.GetAll()
 
-    --Random player is assigned Breen role - it's a special role but not enough to warrant avoiding
+    --Random player is assigned Breen role - it's a special role, but not enough to warrant forcing aversion in a win
     local randomNum = math.random( #PlayerTable )
     local breenPlayer = PlayerTable[ randomNum ]
     breenPlayer:SetTeam( 3 )
@@ -64,7 +72,8 @@ end
 
 --//Call this when any single or table of players needs their role indroduction played
 function GM:RunRoleIntroduction( ply )
-
+    --if not self.GameInProgress then return end --Prevent this from being sent if game isn't running
+    --//^^^TEMPORARILY DISABLED WHILE I TEST IT^^^
     net.Start( "RunRoleIntroductionNetMessage" )
     net.Send( ply )
 
@@ -91,6 +100,10 @@ function GM:SetupRound()
     self.CurrentRound = self.CurrentRound + 1
 
     self:RunRoleIntroduction( player.GetAll() ) --Quick developer note: function param is set as "ply" not a table, but net.Send can accept tables of players, so this still works
+
+    timer.Simple( self.PreRoundSetupLength + self.RoundSetupLength, function()
+        self:StartRound()
+    end )
 
     hook.Call( "OnRoundSetup", self )
 end
@@ -156,11 +169,13 @@ function GM:EndRound( WinningTeam )
         end
     end
 
-    if self.CurrentRound == self.RoundsToPlay then --If we've reached our limit of rounds to play before switching maps
-        self:EndGame()
-    else
-        self:SetupRound() -- Else, start the setup for the next round
-    end
+    timer.Simple( self.PostRoundLength, function()
+        if self.CurrentRound == self.RoundsToPlay then --If we've reached our limit of rounds to play before switching maps
+            self:EndGame()
+        else
+            self:SetupRound() -- Else, start the setup for the next round
+        end
+    end )
 
     hook.Call( "OnRoundEnd", self )
 end

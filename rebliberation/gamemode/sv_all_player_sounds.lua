@@ -110,7 +110,7 @@ hook.Add( "ReloadCall", "LowAmmoCheck", function( ply, wep, clipsize, ammo )
         team = "rebels"
         number = 3
     elseif GAMEMODE.BreenPlayerModels[ ply:GetModel() ] then
-        return
+        return --We don't have any breen sounds, we're using Barney's sounds, so return if the Breen reloads
         --team = "breen"
         --number = 10
     end

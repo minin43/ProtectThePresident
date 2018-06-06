@@ -14,6 +14,7 @@ function GM:PlayerFootsteps( ply, pos, foot, sound, vol, crf )
 end
 
 --//Sets up each bodyguard player's "unqiue signature" to be referenced by in the death radio chatter of the play
+--//Also creates the sound to emit on their death
 hook.Add( "OnRoundStart", "AssignCombineSignatures", function()
     for k, v in pairs( team.GetPlayers( 2 ) ) do
         if k > #GAMEMODE.CombineCallsigns then --If for whatever reason, there's an instance where there's a shitload of bodyguards, just go entirely random
@@ -21,30 +22,34 @@ hook.Add( "OnRoundStart", "AssignCombineSignatures", function()
         else
             GAMEMODE.CombineSignatures[ v:SteamID() ] = { GAMEMODE.CombineCallsigns[ k ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ] }
         end
+
+        local soundName = v:Nick() .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 1 ] .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 2 ] .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 3 ]
+        sound.Add( {
+            name = soundName,
+            volume = 1.0, --Soundlevel in decibels, can be 2 numbers: min and max, respectively
+            level = 100, --Distance sound can be heard, 100 = no change
+            pitch = 100, --Pitch of the sound, 100 = no change, can be 2 numbers: min and max, respectively
+            sound = { --Soundpaths
+                "combine/deathradio/lostbiosignalforunit.wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/_comma.wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/_comma.wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/_period.wav",
+                "combine/deathradio/allteamsrespond.wav",
+                "combine/deathradio/_period.wav",
+                "combine/deathradio/off" .. math.random( 4 ) .. ".wav"
+            }
+        })
     end
 end )
 
---//After a combine bodyguard has died and his death sound has played (not done here), play the radio chatter
---MAY BE ABLE TO REWRITE USING SOUND.ADD, INSTEAD OF TIMING IT WITH TIMERS
+--//After a combine bodyguard has died and his death sound has played (the 3 second timer), play the radio chatter
 hook.Add( "PlayerDeath", "CombineRadioChatter", function( victim, inflictor, attacker )
     if GAMEMODE.CombinePlayerModels[ victim:GetModel() ] then
         timer.Simple( 3, function()
-            victim:EmitSound( "combine/deathradio/lostbiosignalforunit.wav" )
-            timer.Simple( 2, function()
-                victim:EmitSound( "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav" )
-                timer.Simple( 0.5, function()
-                    victim:EmitSound( "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 2 ] .. ".wav" )
-                    timer.Simple( 0.5, function()
-                        victim:EmitSound( "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 3 ] .. ".wav" )
-                        timer.Simple( 0.5, function()
-                            victim:EmitSound( "combine/deathradio/allteamsrespond.wav" )
-                            timer.Simple( 1, function()
-                                victim:EmitSound( "combine/deathradio/off" .. math.random( 4 ) .. ".wav" )
-                            end )
-                        end )
-                    end )
-                end )
-            end )
+            victim:EmitSound( victim:Nick() .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 2 ] .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 3 ] )
         end )
     end
 end )

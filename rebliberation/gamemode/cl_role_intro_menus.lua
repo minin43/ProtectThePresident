@@ -18,6 +18,10 @@ end
 function GM:StandardRoleIntro()
     if self.Main and self.Main:IsValid() then return end --If the menu is already opened, and for some reason it gets called to open another time, ignore it
 
+    for k, v in pairs( player.GetAll() ) --Force mute all players while the intro is played
+        v:Mute( true )
+    end
+
     --if not self.GameInProgress then return end --If a game isn't being played, no reason to run the function - CAN'T RUN THIS, GAMEINPROGRESS NOT SHARED WITH CLIENTS
 
     --If the player isn't on a valid team
@@ -41,6 +45,10 @@ function GM:StandardRoleIntro()
             surface.DrawRect( 0, 0, self.Main:GetWide(), self.Main:GetTall() )
         end
         self:PlayIntroSoundSequence()
+
+        timer.Simple( self.PreRoundSetupLength, function()
+            --
+        end )
     end )
 end
 
