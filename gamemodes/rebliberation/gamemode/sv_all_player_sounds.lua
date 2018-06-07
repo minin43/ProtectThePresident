@@ -1,3 +1,5 @@
+util.AddNetworkString( "TookExplosionDamage" )
+
 GM.SoundLibrary = {}
 GM.LastEmittedSounds = {}
 GM.BlacklistWepons = {} --Add any weapons that shouldn't be reloaded (and have a sound played for it, by extension) here
@@ -7,7 +9,8 @@ hook.Add( "OnRoundEnd", "ResetLastEmittedSoundTable", function()
 end )
 
 --//This function emits a sound from a player who has taken damage, the sound is ran dynamically, so if the player ever dies, it can be cut off 
-hook.Add( "EntityTakeDamage", "DamageGrunts", function( ply, damageinfo )
+hook.Add( "EntityTakeDamage", "DamageGrunts", function( ply, dmginfo )
+    if not GAMEMODE.GameInProgress or not GAMEMODE.RoundInProgress then return end
     if not ply:IsPlayer() then return end
     if timer.Exists( "SoundWait" .. ply:SteamID() ) then return end
 
@@ -50,6 +53,21 @@ hook.Add( "EntityTakeDamage", "DamageGrunts", function( ply, damageinfo )
     end)
 end )
 
+--//If the player takes explosion damage, force the client to display extreme motion blur and set an audio filter with some ringing noises
+hook.Add( "EntityTakeDamage", "SendRinging", function( ply, dmginfo )
+    print( "DEBUG for EntityTakeDamage - SendRinging -", ply, dmginfo:IsDamageType( DMG_BLAST ) )
+    if not ply:IsPlayer() then return end
+    if not dmginfo:IsDamageType( DMG_BLAST ) then return end
+
+    local ToScale
+    ToScale = math.Clamp( 1 + ( dmginfo:GetDamage() / 50), 1, 3 )
+    print( "    Time scale: ", ToScale, " Sending Net Message..." )
+
+    net.Start( "TookExplosionDamage" )
+        net.WriteFloat( ToScale ) --This is the length for the effect we're going to play
+    net.Send( ply )
+end )
+
 --//When a player dies, stop his last played sound, if it's still playing, and play his death sound
 hook.Add( "PlayerDeath", "DeathGrunts", function( victim, inflictor, attacker )
     local team, number
@@ -89,7 +107,7 @@ end )
 
 --//There's no supplied "On Reload" hook provided by garry's mod, so we'll make our own
 hook.Add( "KeyPress", "MyOnReload", function( ply, key )
-    if not key == IN_RELOAD then return end --If the key your pressing is your reload button
+    if not key != 8192 then return end --If the key your pressing is your reload button
     local wep = ply:GetActiveWeapon()
     if GAMEMODE.BlacklistWepons[wep] then return end --If the weapon isn't blacklisted as one that doesn't get the sound played
     local clipsize = wep:GetMaxClip1()

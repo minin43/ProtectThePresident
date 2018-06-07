@@ -13,16 +13,22 @@ function GM:PlayerFootsteps( ply, pos, foot, sound, vol, crf )
     end
 end
 
---//Sets up each bodyguard player's "unqiue signature" to be referenced by in the death radio chatter of the play
---//Also creates the sound to emit on their death
-hook.Add( "OnRoundStart", "AssignCombineSignatures", function()
-    for k, v in pairs( team.GetPlayers( 2 ) ) do
+--//Sets up each bodyguard player's "unqiue signature", shared over both server and client, when requested
+function GM:AssignCombineID( combinePlayers )
+    self.CombineSignatures = {} --Refresh the table every time this function gets ran (at the start of a round - when we have a fresh batch of bodyguards)
+
+    for k, v in pairs( combinePlayers ) do
         if k > #GAMEMODE.CombineCallsigns then --If for whatever reason, there's an instance where there's a shitload of bodyguards, just go entirely random
             GAMEMODE.CombineSignatures[ v:SteamID() ] = { GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ] }
         else
             GAMEMODE.CombineSignatures[ v:SteamID() ] = { GAMEMODE.CombineCallsigns[ k ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ], GAMEMODE.CombineCallsigns[ math.random( #GAMEMODE.CombineCallsigns ) ] }
         end
+    end
+end
 
+--//Creates the radio chatter to emit on a bodyguard's death
+hook.Add( "OnRoundStart", "AssignCombineSignatures", function()
+    for k, v in pairs( team.GetPlayers( 2 ) ) do
         local soundName = v:Nick() .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 1 ] .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 2 ] .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 3 ]
         sound.Add( {
             name = soundName,
@@ -31,11 +37,11 @@ hook.Add( "OnRoundStart", "AssignCombineSignatures", function()
             pitch = 100, --Pitch of the sound, 100 = no change, can be 2 numbers: min and max, respectively
             sound = { --Soundpaths
                 "combine/deathradio/lostbiosignalforunit.wav",
-                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 1 ] .. ".wav",
                 "combine/deathradio/_comma.wav",
-                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 1 ] .. ".wav",
                 "combine/deathradio/_comma.wav",
-                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ victim:SteamID() ][ 1 ] .. ".wav",
+                "combine/deathradio/" .. GAMEMODE.CombineSignatures[ v:SteamID() ][ 1 ] .. ".wav",
                 "combine/deathradio/_period.wav",
                 "combine/deathradio/allteamsrespond.wav",
                 "combine/deathradio/_period.wav",

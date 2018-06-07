@@ -14,7 +14,7 @@ hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
             for k, v in pairs( player.GetAll() ) do
                 v:ChatPrint( "[RL]: " .. ply:Nick() .. " has fully connected to the game." )
             end
-            ply:KillSilent() --May need to remove
+            --ply:KillSilent() --May need to remove
             GAMEMODE.JoiningPlayers[ply:SteamID()] = false
             if #player.GetAll() >= GAMEMODE.MinimumPlayers then --If the current amount of players exceeds the minimum required to play
                 GAMEMODE:StartGame()
@@ -50,7 +50,7 @@ function GM:InitiallySetupTeams()
     while guardsSelected != numberOfGuards do
         randomNum = math.random( #PlayerTable )
         selectedPlayer = PlayerTable[ randomNum ]
-        if not self.LastWinners[ selectedPlayer ] then
+        if not self.LastWinners[ selectedPlayer ] then --If the player isn't a part of the "last round winners" table, let them be a guard
             selectedPlayer:SetTeam( 2 )
             guardsSelected = guardsSelected + 1
             table.remove( PlayerTable, randomNum )
@@ -63,6 +63,7 @@ function GM:InitiallySetupTeams()
         end
         counter = counter + 1
     end
+    self:AssignCombineID( team.GetPlayers( 2 ) )
 
     --For all of the players that weren't assigned as Breen of a Bodyguard, set to the attacking terrorits
     for k, v in pairs( PlayerTable ) do
@@ -75,6 +76,9 @@ function GM:RunRoleIntroduction( ply )
     --if not self.GameInProgress then return end --Prevent this from being sent if game isn't running
     --//^^^TEMPORARILY DISABLED WHILE I TEST IT^^^
     net.Start( "RunRoleIntroductionNetMessage" )
+        if ply:GetTeam() == 2 then
+            net.WriteTable( self.CombineSignatures[ ply:SteamID() ] ) --If the player is a bodyguard, send them their combine ID
+        end
     net.Send( ply )
 
 end
@@ -88,14 +92,14 @@ function GM:StartGame()
         self:SetupRound()
         self.CurrentRound = 0
         SetGlobalInt( "RoundTime", 0 )
-    end
+    end )
     hook.Call( "OnGameStart", self )
 end
 
---//This function does the logic for the "pre-round," where players are notified of their role and get to choose their loadout
+--//This function does the logic for the "pre-round," where players are put into their teams, notified of their role, and get to choose their loadout
 function GM:SetupRound()
     if not self.GameInProgress then return end
-    self:InitiallySetupTeams()
+    self:InitiallySetupTeams() --MUST be ran before RunRoleIntroduction (found 4 lines below), if the combine radio chatter is to be properly sent to clients
 
     self.CurrentRound = self.CurrentRound + 1
 

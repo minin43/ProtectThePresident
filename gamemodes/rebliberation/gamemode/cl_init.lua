@@ -1,0 +1,5 @@
+include( "cl_combine_sounds.lua" )
+include( "cl_effects.lua" )
+include( "cl_role_intro_menus.lua" )
+--include( "cl_role_intro_menus_setup.lua" )
+include( "sh_setup.lua" )
