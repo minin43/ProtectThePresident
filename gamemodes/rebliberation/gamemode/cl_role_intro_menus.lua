@@ -1,3 +1,15 @@
+GM.LoadoutOptions = { --[[  FORMAT
+    Points == 0 // The number of points the player can spend on the below weapons & perks
+    Weapons = {
+        Primary = {} // All the primary weapons the player can use
+        Secondary = {} // All the secondary weapons the player can use
+        Tertiary = {} // All the tertiary weapons the player can use
+    }
+    Armor = {} // All armor types
+    Perks = {} // All the available perks (and handicap removals) the player can choose
+]]}
+GM.CurentLoadout = {} --Same format as above, just without Points key/value
+
 function GM:PlayIntroSoundSequence()
     if LocalPlayer():Team() == 1 then
         surface.PlaySound( "rebels/roundstart1.wav" )
@@ -34,38 +46,28 @@ function GM:StandardRoleIntro()
     self.DisableChatbox = true
 
     LocalPlayer():ScreenFade( SCREENFADE.OUT, Color( 0, 0, 0, 255 ), 1, 3 )
+    timer.Simple( 2.95, function()
+        LocalPlayer():ScreenFade( SCREENFADE.IN, Color( 0, 0, 0, 255 ), 2, 0 )
+    end )
 
-    local RoleName, RoleObjective, RoleDescription
-    if LocalPlayer():Team() == 1 then
-        RoleName = "You are a rebel fight."
-        RoleObjective = "Your objective is to eliminate Wallace Breen at all costs."
-        RoleDescription = ( "You will start off weak, but will earn points as the game progresses, based on several events that happen throughout it. Use these points to upgrade your arsenal, "
-            .. "or spend them to remove your handicaps." )
-    elseif LocalPlayer():Team() == 2 then
-        local tag1, tag2, tag3
-        tag1 = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 2 )
-        tag2 = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 2 )
-        tag3 = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 3 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 3 ], 2 )
-
-        RoleName = "You are Bodyguard Unit " .. tag1 .. "-" .. tag2 .. "-" .. tag3 .. "."
-        RoleObjective = "Your objective is to keep Wallace Breen alive until he can be extracted from the area."
-        RoleDescription = "Use the best gear you can. You don't respawn, and your resources are finite. Communication between your fellow bodyguards and Breen is key to being successful."
-    elseif LocalPlayer():Team() == 3 then
-        RoleName = "You are Doctor Wallace Breen."
-        RoleObjective = "Your objective is to stay alive long enough for your extraction to arrive."
-        RoleDescription = "You have no way to defend yourself, no weapons. You must rely on communication with your bodyguards to keep you alive; do not forget this."
+    local IDTable = {}
+    if LocalPlayer():Team() == 2 then
+        IDTable[ 1 ] = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 2 )
+        IDTable[ 2 ] = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 2 )
+        IDTable[ 3 ] = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 3 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 3 ], 2 )
     end
 
     timer.Simple( 2, function()
         --//The main panel, everything is parented to this
         self.Main = vgui.Create( "DFrame" )
         self.Main:SetSize( ScrW(), ScrH() )
+        self.Main:SetPos( 0, 0 )
         self.Main:SetTitle( "" )
         self.Main:SetVisible( true )
         self.Main:SetDraggable( false )
         self.Main:ShowCloseButton( false )
-        self.Main:MakePopup()
-        self.Main:Center()
+        --self.Main:MakePopup() --I think this enables mouse cursor, we don't want it immediately
+        --self.Main:Center()
         self.MainX, self.MainY = self.Main:GetPos()
         self.Main.Paint = function()
             surface.SetDrawColor( 0, 0, 0, 255 )
@@ -73,20 +75,62 @@ function GM:StandardRoleIntro()
         end
         self:PlayIntroSoundSequence()
 
-        
+        self.MainRoleIntro = vgui.Create( "RolePanel", self.Main )
+        self.MainRoleIntro:SetSize( self.Main:GetWide(), self.Main:GetTall() )
+        self.MainRoleIntro:SetPos( 0, 0 )
+        self.MainRoleIntro:SetTeam( LocalPlayer():Team(), IDTable )
 
         timer.Simple( self.PreRoundSetupLength, function()
-            --
+            self.MainRoleIntro:Remove()
+            self:StartLoadout( true ) --< Called below
+
+            for k, v in pairs( player.GetAll() ) do --Unmute all players after intro has played
+                v:Mute( false )
+            end
+            self.DisableChatbox = false --Enable chatbox after intro
+
+            timer.Simple( self.RoundSetupLength, function() --After the round setup is finished, force close loadout menu
+                self.Main:Remove()
+                net.Send( "SetLoadout" )
+                    net.WriteTable( self.CurentLoadout )
+                net.SendToServer()
+            end )
         end )
+    end )
+end
+
+function GM:StartLoadout( initialLoadout )
+    net.Start( "StartedLoadout" )
+    net.SendToServer()
+
+    net.Receive( "StartedLoadoutCallback", function()
+        self.LoadoutOptions = net.ReadTable()
+
+        --We'll be drawing a menu with 2 halves, the left side are the weapons, the right side are the perks (And handicap removals)
+
+        if initialLoadout then
+            self.SecondMain = vgui.Create( "DPanel", self.Main )
+            self.Main:MakePopup()
+        else
+            self.SecondMain = vgui.Create( "DFrame" )
+        end
+
+        self.MainWeaponWindow = vgui.Create( "DPanel", self.SecondMain )
+        self.MainSkillWindow = vgui.Create( "DPanel", self.SecondMain )
+
+        if LocalPlayer():Team() == 1 or LocalPlayer():Team() == 2 then
+
+        else
+
+        end
     end )
 end
 
 --//Disables players from typing during round intro sequence
 function GM:StartChat( IsTeamChat )
     if self.DisableChatbox then
-        return false
+        return true
     end
 end
 
-local buh = GM.StandardRoleIntro
 net.Receive( "RunRoleIntroductionNetMessage", GM.StandardRoleIntro )
