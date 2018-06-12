@@ -28,6 +28,7 @@ hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
             end
             GAMEMODE.JoiningPlayers[ply:SteamID()] = false
             ply:SetTeam( 1 ) --A player can't be assigned as president or a bodyguard halfway through the round, so auto-set them to terrorist team
+            self:SetNewJoinPoints( ply )
             self:RunRoleIntroduction( ply )
         end
     end
@@ -75,6 +76,8 @@ end
 function GM:RunRoleIntroduction( ply )
     --if not self.GameInProgress then return end --Prevent this from being sent if game isn't running
     --//^^^TEMPORARILY DISABLED WHILE I TEST IT^^^
+
+    --//We're to assume teams have already been assigned by the time this is run
     net.Start( "RunRoleIntroductionNetMessage" )
         if ply:GetTeam() == 2 then
             net.WriteTable( self.CombineSignatures[ ply:SteamID() ] ) --If the player is a bodyguard, send them their combine ID
@@ -104,6 +107,7 @@ function GM:SetupRound()
     self.CurrentRound = self.CurrentRound + 1
 
     self:RunRoleIntroduction( player.GetAll() ) --Quick developer note: function param is set as "ply" not a table, but net.Send can accept tables of players, so this still works
+    self:AssignStartingPoints()
 
     timer.Simple( self.PreRoundSetupLength + self.RoundSetupLength, function()
         self:StartRound()
@@ -126,14 +130,17 @@ function GM:StartRound()
         SetGlobalInt( "RoundTime", GetGlobalInt( "RoundTime" ) - 1 ) --Every second, reduce the RoundTime by 1 second
 
         if GetGlobalInt( "RoundTime" ) == math.Round( TimeUntilExtraction * 3 / 4 ) then --At 1/4 of the time having been passed
+            self:AddToAllTerroristPoints( self.TerroristTimeBonus )
             for k, v in pairs( player.GetAll() ) do
 
             end
         elseif GetGlobalInt( "RoundTime" ) == math.Round( TimeUntilExtraction * 2 / 4 ) then --At 1/2 of the time having been passed
+            self:AddToAllTerroristPoints( self.TerroristTimeBonus )
             for k, v in pairs( player.GetAll() ) do
 
             end
         elseif GetGlobalInt( "RoundTime" ) == math.Round( TimeUntilExtraction * 1 / 4 ) then --At 3/4 of the time having been passed
+            self:AddToAllTerroristPoints( self.TerroristTimeBonus )
             for k, v in pairs( player.GetAll() ) do
 
             end

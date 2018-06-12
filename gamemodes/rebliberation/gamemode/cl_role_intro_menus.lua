@@ -8,7 +8,8 @@ GM.LoadoutOptions = { --[[  FORMAT
     Armor = {} // All armor types
     Perks = {} // All the available perks (and handicap removals) the player can choose
 ]]}
-GM.CurentLoadout = {} --Same format as above, just without Points key/value
+GM.CurentLoadout = {} --Same format as above, we're just sending it to the server
+
 
 function GM:PlayIntroSoundSequence()
     if LocalPlayer():Team() == 1 then
@@ -104,25 +105,16 @@ function GM:StartLoadout( initialLoadout )
     net.SendToServer()
 
     net.Receive( "StartedLoadoutCallback", function()
-        self.LoadoutOptions = net.ReadTable()
-
-        --We'll be drawing a menu with 2 halves, the left side are the weapons, the right side are the perks (And handicap removals)
+        self.TotalPoints = net.ReadInt()
+        self.SpentPoints = self.SpentPoints or 0
 
         if initialLoadout then
-            self.SecondMain = vgui.Create( "DPanel", self.Main )
+            self.SecondMain = vgui.Create( "LoadoutMenuPanel", self.Main )
             self.Main:MakePopup()
         else
-            self.SecondMain = vgui.Create( "DFrame" )
+            self.SecondMain = vgui.Create( "LoadoutMenuFrame" )
         end
 
-        self.MainWeaponWindow = vgui.Create( "DPanel", self.SecondMain )
-        self.MainSkillWindow = vgui.Create( "DPanel", self.SecondMain )
-
-        if LocalPlayer():Team() == 1 or LocalPlayer():Team() == 2 then
-
-        else
-
-        end
     end )
 end
 
