@@ -6,6 +6,7 @@ GM.LoadoutOptions = { --[[  FORMAT
         Tertiary = {} // All the tertiary weapons the player can use
     }
     Armor = {} // All armor types
+    Ammo = {} //All additional ammo by type
     Perks = {} // All the available perks (and handicap removals) the player can choose
 ]]}
 GM.CurentLoadout = {} --Same format as above, we're just sending it to the server

@@ -14,6 +14,7 @@ if SERVER then
     util.AddNetworkString( "StartedLoadoutCallback" )
 
     GM.PlayerLoadouts = {}
+    GM.VerifiedPlayerLoadouts = {}
 
     net.Receive( "StartedLoadout", function( len, ply )
         net.Start( "StartedLoadoutCallback" )
@@ -23,20 +24,88 @@ if SERVER then
 
     net.Receive( "SendLoadout", function( len, ply )
         GM.PlayerLoadouts[ ply:SteamID() ] = net.ReadTable()
+        GM:VerifyLoadout( ply )
     end )
+
+    --//Function is used to verify that the client sent us a loadout it's allowed to have
+    function GM:VerifyLoadout( ply )
+        local runningTotal = 0
+
+        runningTotal = self:VerifyWeapons( ply, runningTotal )
+        runningTotal = self:VerifyArmor( ply, runningTotal )
+        runningTotal = self:VerifyAmmo( ply, runningTotal )
+        runningTotal = self:VerifyPerks( ply, runningTotal )
+
+        if runningTotal <= self.PlayerPoints[ ply:GetTeam() ][ ply:SteamID() ] then
+            GM.VerifiedPlayerLoadouts[ ply:SteamID() ] = GM.PlayerLoadouts[ ply:SteamID() ]
+        else
+            error( "Player attempted loadout with too many point spent! Player " .. ply:Nick() .. " is possible cheater.", 1 )
+        end
+    end
+
+    function GM:VerifyWeapons( ply, runningTotal )
+        --//Check if the weapons are all valid
+        for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Weapons ) do
+            for k2, v2 in pairs( v ) do
+                if isnumber( self.WeaponsTable[ k ][ k2 ][ ply:GetTeam() ] ) then --If the player is allowed to have it
+                    runningTotal = runningTotal + self.WeaponsTable[ k ][ k2 ][ ply:GetTeam() ] --Keep track of points spent
+                else --If the player is sending a bad table, we need to know
+                    k2 = false
+                    error( "Player attempted loadout with non-role weapon! Player " .. ply:Nick() .. " is possible cheater.", 1 )
+                end
+                return runningTotal
+            end
+        end
+    end
+
+    function GM:VerifyArmor( ply, runningTotal )
+        --//Check if the armor choice is valid
+        if isnumber( self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:GetTeam() ] ) then
+            runningTotal = runningTotal + self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:GetTeam() ]
+        else
+            self.PlayerLoadouts[ ply:SteamID() ].Armor = "Light Armor"
+            error( "Player attempted loadout with non-role armor! Player " .. ply:Nick() .. " is possible cheater.", 1 )
+        end
+        return runningTotal
+    end
+
+    function GM:VerifyAmmo( ply, runningTotal )
+        --//Check if the ammo choices are valid
+        for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Ammo ) do
+            if isnumber( self.AmmoTable[ k ][ ply:GetTeam() ] ) then
+                runningTotal = runningTotal + ( self.AmmoTable[ k ][ ply:GetTeam() ] * v )
+            else
+                k = 0
+                error( "Player attempted loadout with non-role ammo! Player " .. ply:Nick() .. " is possible cheater.", 1 )
+            end
+        end
+        return runningTotal
+    end
+
+    function GM:VerifyPerks( ply, runningTotal )
+        for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Perks ) do
+            if isnumber( self.PerksTable[ k ][ ply:GetTeam() ] ) then
+                runningTotal = runningTotal + self.PerksTable[ k ][ ply:GetTeam() ]
+            else
+                k = false
+                error( "Player attempted loadout with non-role perk! Player " .. ply:Nick() .. " is possible cheater.", 1 )
+            end
+        end
+        return runningTotal
+    end
 end
 
 GM.WeaponsTable = { --Points required for: team 1, team 2, team 3. 0 = No Cost/Default, nil = Restricted, -# = Extra points given.
-    PrimaryWeapons = {
+    Primary = {
         [ "weapon_smg1" ] = { 1, 1, nil },
         [ "weapon_ar2" ] = { 1, 1, nil },
         [ "weapon_shotgun" ] = { 1, 1, nil }
     },
-    SecondaryWeapons = {
+    Secondary = {
         [ "weapon_pistol" ] = { 0, 0, nil },
         [ "weapon_357" ] = { 1, 1, nil }
     },
-    TertiaryWeapons = {
+    Tertiary = {
         [ "weapon_frag" ] = { 1, 1, nil },
         [ "weapon_slam" ] = { 1, 1, nil },
         [ "" ] = { nil, 1, nil }, --Manhack
@@ -62,7 +131,7 @@ GM.ArmorTable = { --4th value is the armor description
     [ "Elite Armor" ] = { nil, 1, 1, "Power armor underlayed with Combat armor." },
 }
 
-GM.SkillsTable = { --4th value is the skill description
+GM.PerksTable = { --4th value is the skill description
     --Terrorist-only Skills
     [ "Remove Sight-Inhibitor Chip" ] = { 2, nil, nil, "Remove the Combine-implanted eye-socket microchip, returning full use of your peripheral vision" }, --Removes FOV modifier
     [ "Remove Stamina-Inhibitor Chip" ] = { 3, nil, nil, "Remove the Combine-implanted brain microchip, allowing full control of your cardiovascular and motor systems." }, --Allow sprinting
