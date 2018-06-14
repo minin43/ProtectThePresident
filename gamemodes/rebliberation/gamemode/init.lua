@@ -3,6 +3,7 @@ AddCSLuaFile( "cl_effects.lua" )
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_role_intro_menus.lua" )
 AddCSLuaFile( "cl_role_intro_menus_setup.lua" )
+AddCSLuaFile( "sh_loadout.lua" )
 AddCSLuaFile( "sh_setup.lua" )
 
 include( "sv_all_player_sounds.lua" )
@@ -10,6 +11,7 @@ include( "sv_class_bodyguard.lua" )
 include( "sv_class_president.lua" )
 include( "sv_class_terrorist.lua" )
 include( "sv_combine_sounds.lua" )
+include( "sv_points.lua" )
 include( "sv_round.lua" )
 include( "sh_setup.lua" )
 
@@ -107,7 +109,7 @@ end
 
 --//Combine players have their tag printed before their message when they type a message - just some fun, additional immersion
 hook.Add( "PlayerSay", "CombineChat", function( ply, text, team )
-    if ( ply:GetTeam() == 2 ) then
+    if ( ply:Team() == 2 ) then
         local tag1, tag2, tag3
         tag1 = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 1 ], 2 )
         tag2 = string.upper( string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 1, 1 ) ) .. string.sub( GAMEMODE.CombineSignatures[ ply:SteamID() ][ 2 ], 2 )
@@ -121,11 +123,11 @@ hook.Add( "PlayerCanHearPlayersVoice", "DisableDeadAndEnemyVoices", function( li
     if GAMEMODE.RoundInProgress then
         if not listener:Alive() or not speaker:Alive() then return false end
 
-        if listener:GetTeam() == 1 and ( speaker:GetTeam() == 2 or speaker:GetTeam() == 3 ) then
+        if listener:Team() == 1 and ( speaker:Team() == 2 or speaker:Team() == 3 ) then
             return false
-        elseif listener:GetTeam() == 2 and speaker:GetTeam() == 1 then
+        elseif listener:Team() == 2 and speaker:Team() == 1 then
             return false
-        elseif listener:GetTeam() == 3 and speaker:GetTeam() == 1 then
+        elseif listener:Team() == 3 and speaker:Team() == 1 then
             return false
         else
             return true

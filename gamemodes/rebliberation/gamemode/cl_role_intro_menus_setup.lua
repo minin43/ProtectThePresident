@@ -16,6 +16,7 @@ function draw.FilledCircle( x, y, radius, seg )
 	surface.DrawPoly( cir )
 end
 
+--//Use to determine if the player has at least the provided point amount left to select
 function GM:CanSelect( pointCost )
     if pointCost > self.TotalPoints - self.SpentPoints then
         return false
@@ -79,12 +80,12 @@ vgui.Register( "RolePanel", RolePanel, "DPanel" )
 local WeaponOptionPanel = {}
 WeaponOptionPanel.class = ""
 WeaponOptionPanel.name = ""
-WeaponOptionPanel.tablekey = ""
 WeaponOptionPanel.model = ""
-WeaponOptionPanel.damage = 0
+WeaponOptionPanel.tablekey = ""
+--[[WeaponOptionPanel.damage = 0
 WeaponOptionPanel.recoil = 0
 WeaponOptionPanel.rof = 0 --rate of fire
-WeaponOptionPanel.magazine = 0 --base magazine size
+WeaponOptionPanel.magazine = 0 --base magazine size]]
 WeaponOptionPanel.cost = 0
 
 function WeaponOptionPanel:SetWeapon( newWeaponClass, weaponCost, weaponType, specialName, specialModel )
@@ -95,10 +96,10 @@ function WeaponOptionPanel:SetWeapon( newWeaponClass, weaponCost, weaponType, sp
     self.name = specialName or wep.PrintName
     self.model = specialModel or wep.WorldModel
     self.tablekey = weaponType
-    self.damage = wep.Damage
+    --[[self.damage = wep.Damage
     self.recoil = wep.Recoil
     self.rof = wep.FireDelay
-    self.magazine = wep.ClipSize
+    self.magazine = wep.ClipSize]]
 end
 
 function WeaponOptionPanel:Paint()
@@ -109,11 +110,12 @@ function WeaponOptionPanel:DoClick()
     if self.selected then --If we've selected the weapon and are clicking to remove it
         self.selected = false
         GM.SpentPoints = GM.SpentPoints - self.cost
+        GM.CurentLoadout.Weapons[ self.tablekey ][ self.class ] = false
         surface.PlaySound( "buttons/deselect.wav" )
-    elseif GM.CanSelect( self.cost ) --If it wasn't selected and we are clicking to add it to our loadout
+    elseif self.CanSelect then --If it wasn't selected and we are clicking to add it to our loadout
         self.selected = true
         GM.SpentPoints = GM.SpentPoints + self.cost
-        GM.
+        GM.CurentLoadout.Weapons[ self.tablekey ][ self.class ] = true
         surface.PlaySound( "buttons/select.wav" )
     else --If it wasn't selected and we are clicking to add it to our loadout, but we don't have enough points
         if LocalPlayer():Team() == 1 then
@@ -125,7 +127,7 @@ function WeaponOptionPanel:DoClick()
 end
 
 function WeaponOptionPanel:OnCursorEntered()
-    if GM.CanSelect( self.cost )
+    if self.CanSelect then
         surface.PlaySound( "garrysmod/ui_hover.wav" )
         self.hover = true
     end
@@ -140,8 +142,10 @@ function WeaponOptionPanel:OnRemove()
 end
 
 function WeaponOptionPanel:Think()
-    if not GM.CanSelect( self.cost )
-        --set something false here? We can have everything grey out when you run out of points
+    if not GM.CanSelect( self.cost ) then
+        self.CanSelect = true
+    else
+        self.CanSelect = false
     end
 end
 
@@ -174,20 +178,20 @@ function WeaponsSidePanel:SetWeaponsLists( primWeps, seconWeps, tertWeps )
 
     for k, v in pairs( self.primaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
-        wepPanel:SetWeapon( k, v[ 1 ], "primaryWeapons", v[ 2 ], v[ 3 ] )
-        wepPanel:Dock( TOP ) --Doesn't this format ascending? With the default at the bottom? I want it descending
+        wepPanel:SetWeapon( k, v[ 1 ], "Primary", v[ 2 ], v[ 3 ] )
+        wepPanel:Dock( TOP ) --Isn't this ascending? With the first at the bottom? I want it descending...
     end
 
     for k, v in pairs( self.secondaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
-        wepPanel:SetWeapon( k, v[ 1 ], "secondaryWeapons", v[ 2 ], v[ 3 ] )
-        wepPanel:Dock( TOP ) --Doesn't this format ascending? With the default at the bottom? I want it descending
+        wepPanel:SetWeapon( k, v[ 1 ], "Secondary", v[ 2 ], v[ 3 ] )
+        wepPanel:Dock( TOP )
     end
 
     for k, v in pairs( self.tertiaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
-        wepPanel:SetWeapon( k, v[ 1 ], "tertiaryWeapons", v[ 2 ], v[ 3 ] )
-        wepPanel:Dock( TOP ) --Doesn't this format ascending? With the default at the bottom? I want it descending
+        wepPanel:SetWeapon( k, v[ 1 ], "Tertiary", v[ 2 ], v[ 3 ] )
+        wepPanel:Dock( TOP )
     end
 end
 

@@ -1,7 +1,7 @@
 hook.Add( "DoPlayerDeath", "TerroristDeath", function( victim, attacker, dmginfo )
     if not self.GameInProgress or not self.RoundInProgress then return end
     if not victim or not IsValid( victim ) or not attacker or not IsValid( attacker ) then return end
-    if victim:GetTeam() != 1 then return end
+    if victim:Team() != 1 then return end
 
     net.Start( "DoFadeout" )
         net.WriteInt( 2, 3 ) --2 second fade to black

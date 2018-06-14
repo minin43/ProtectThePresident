@@ -1,4 +1,4 @@
-GM.LoadoutOptions = { --[[  FORMAT
+--[[  FORMAT
     Points == 0 // The number of points the player can spend on the below weapons & perks
     Weapons = {
         Primary = {} // All the primary weapons the player can use
@@ -8,7 +8,7 @@ GM.LoadoutOptions = { --[[  FORMAT
     Armor = {} // All armor types
     Ammo = {} //All additional ammo by type
     Perks = {} // All the available perks (and handicap removals) the player can choose
-]]}
+]]
 GM.CurentLoadout = {} --Same format as above, we're just sending it to the server
 
 
@@ -31,7 +31,7 @@ end
 --//This function is used to play the standard role "introduction" sequence for the player it's asked to run on - works dynamically, regardless of player's team
 function GM:StandardRoleIntro()
     local CombineIDInfo
-    if LocalPlayer():GetTeam() == 2 then --If we're a bodyguard, we're expecting some information regarding our combine ID
+    if LocalPlayer():Team() == 2 then --If we're a bodyguard, we're expecting some information regarding our combine ID
         CombineIDInfo = net.ReadTable()
     end
 
@@ -114,8 +114,19 @@ function GM:StartLoadout( initialLoadout )
             self.Main:MakePopup()
         else
             self.SecondMain = vgui.Create( "LoadoutMenuFrame" )
+            self.SecondMain:SetTitle( "" )
+            self.SecondMain:SetVisible( true )
+            self.SecondMain:SetDraggable( false )
+            self.SecondMain:ShowCloseButton( false )
+            self.SecondMain:MakePopup()
         end
+        self.SecondMain:SetPos()
+        self.SecondMain:SetSize()
 
+        self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
+        self.SecondMainLeft:SetWeaponsLists( self.WeaponsTable.Primary, self.WeaponsTable.Secondary, self.WeaponsTable.Tertiary ) --Just realized, we haven't filtered out restricted items
+
+        self.SecondMainRight = vgui.Create( "", self.SecondMain )
     end )
 end
 

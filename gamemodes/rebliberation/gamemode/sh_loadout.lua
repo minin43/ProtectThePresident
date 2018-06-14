@@ -18,7 +18,7 @@ if SERVER then
 
     net.Receive( "StartedLoadout", function( len, ply )
         net.Start( "StartedLoadoutCallback" )
-            net.WriteInt( 8, GM.PlayerPoints[ ply:GetTeam() ][ ply:SteamID() ] )
+            net.WriteInt( 8, GM.PlayerPoints[ ply:Team() ][ ply:SteamID() ] )
         net.Send( ply )
     end )
 
@@ -36,7 +36,7 @@ if SERVER then
         runningTotal = self:VerifyAmmo( ply, runningTotal )
         runningTotal = self:VerifyPerks( ply, runningTotal )
 
-        if runningTotal <= self.PlayerPoints[ ply:GetTeam() ][ ply:SteamID() ] then
+        if runningTotal <= self.PlayerPoints[ ply:Team() ][ ply:SteamID() ] then
             GM.VerifiedPlayerLoadouts[ ply:SteamID() ] = GM.PlayerLoadouts[ ply:SteamID() ]
         else
             error( "Player attempted loadout with too many point spent! Player " .. ply:Nick() .. " is possible cheater.", 1 )
@@ -47,8 +47,8 @@ if SERVER then
         --//Check if the weapons are all valid
         for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Weapons ) do
             for k2, v2 in pairs( v ) do
-                if isnumber( self.WeaponsTable[ k ][ k2 ][ ply:GetTeam() ] ) then --If the player is allowed to have it
-                    runningTotal = runningTotal + self.WeaponsTable[ k ][ k2 ][ ply:GetTeam() ] --Keep track of points spent
+                if isnumber( self.WeaponsTable[ k ][ k2 ][ ply:Team() ] ) then --If the player is allowed to have it
+                    runningTotal = runningTotal + self.WeaponsTable[ k ][ k2 ][ ply:Team() ] --Keep track of points spent
                 else --If the player is sending a bad table, we need to know
                     k2 = false
                     error( "Player attempted loadout with non-role weapon! Player " .. ply:Nick() .. " is possible cheater.", 1 )
@@ -60,8 +60,8 @@ if SERVER then
 
     function GM:VerifyArmor( ply, runningTotal )
         --//Check if the armor choice is valid
-        if isnumber( self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:GetTeam() ] ) then
-            runningTotal = runningTotal + self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:GetTeam() ]
+        if isnumber( self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:Team() ] ) then
+            runningTotal = runningTotal + self.ArmorTable[ self.PlayerLoadouts[ ply:SteamID() ].Armor ][ ply:Team() ]
         else
             self.PlayerLoadouts[ ply:SteamID() ].Armor = "Light Armor"
             error( "Player attempted loadout with non-role armor! Player " .. ply:Nick() .. " is possible cheater.", 1 )
@@ -72,8 +72,8 @@ if SERVER then
     function GM:VerifyAmmo( ply, runningTotal )
         --//Check if the ammo choices are valid
         for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Ammo ) do
-            if isnumber( self.AmmoTable[ k ][ ply:GetTeam() ] ) then
-                runningTotal = runningTotal + ( self.AmmoTable[ k ][ ply:GetTeam() ] * v )
+            if isnumber( self.AmmoTable[ k ][ ply:Team() ] ) then
+                runningTotal = runningTotal + ( self.AmmoTable[ k ][ ply:Team() ] * v )
             else
                 k = 0
                 error( "Player attempted loadout with non-role ammo! Player " .. ply:Nick() .. " is possible cheater.", 1 )
@@ -84,8 +84,8 @@ if SERVER then
 
     function GM:VerifyPerks( ply, runningTotal )
         for k, v in pairs( self.PlayerLoadouts[ ply:SteamID() ].Perks ) do
-            if isnumber( self.PerksTable[ k ][ ply:GetTeam() ] ) then
-                runningTotal = runningTotal + self.PerksTable[ k ][ ply:GetTeam() ]
+            if isnumber( self.PerksTable[ k ][ ply:Team() ] ) then
+                runningTotal = runningTotal + self.PerksTable[ k ][ ply:Team() ]
             else
                 k = false
                 error( "Player attempted loadout with non-role perk! Player " .. ply:Nick() .. " is possible cheater.", 1 )
@@ -143,11 +143,11 @@ GM.PerksTable = { --4th value is the skill description
     [ "Recovery Nano-Machine Injection" ] = { nil, nil, 2, "Inject a small dose of nano-machines into your blood-stream, which slowly mend damage to your body over time." },
 
     --Bodyguard-only skills
-    [ "Discarded Munition Identifier" ] = { nil, 1, nil, "Outfit your suit visor to locate the discarded munitions that can be scavenged off terrorist corpses." }, --HUD spots out spare ammo
+    [ "Discarded Munition Identifier" ] = { nil, 1, nil, "Outfit your suit visor to locate discarded munitions that can be scavenged off terrorist corpses." }, --HUD spots out spare ammo
 
     --Shared skills
     [ "Stride Enhancement Device" ] = { 1, 1, 1, "Increases the rate at which you normally move." }, --Increases walk speed
     [ "Stride Enhancement Device V.2" ] = { 1, 1, 1, "Increases the speed at which you can sprint." }, --Increase sprint speed
-    [ "Respiratory Rejuvenation" ] = { 1, 1, 1, "Your red blood cells carry more oxygen, increasing your body's stamina" }, --Decrease the time it takes to regain your stamina
+    [ "Respiratory Rejuvenation" ] = { 1, 1, 1, "Your red blood cells can carry more oxygen, increasing your body's stamina regenartion." }, --Decrease the time it takes to regain your stamina
     [ "Biometric 3D Locating" ] = { nil, 1, 1, "Mount a headpiece on yourself that allows you to see a 3D representation of your allies through walls." } --See teammates through walls
 }

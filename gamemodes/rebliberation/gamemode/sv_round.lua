@@ -79,7 +79,7 @@ function GM:RunRoleIntroduction( ply )
 
     --//We're to assume teams have already been assigned by the time this is run
     net.Start( "RunRoleIntroductionNetMessage" )
-        if ply:GetTeam() == 2 then
+        if ply:Team() == 2 then
             net.WriteTable( self.CombineSignatures[ ply:SteamID() ] ) --If the player is a bodyguard, send them their combine ID
         end
     net.Send( ply )
