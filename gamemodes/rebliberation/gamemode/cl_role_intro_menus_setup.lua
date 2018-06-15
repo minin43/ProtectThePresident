@@ -75,6 +75,37 @@ end
 
 vgui.Register( "RolePanel", RolePanel, "DPanel" )
 
+local AmmoWang = {}
+AmmoWang.type = ""
+AmmoWang.cost = 0
+AmmoWang.last = 0
+
+function AmmoWang:SetAmmo( newType, newCost )
+    self.type = newType
+    self.cost = newCost
+
+    self:SetMin( 0 )
+end
+
+function AmmoWang:OnValueChanged( newVal ) --This is seen as an event call, but doesn't override functionality
+    if newVal > self.last then --If we're adding ammo
+        GM.SpentPoints = GM.SpentPoints + ( newVal * self.cost ) - ( self.last * self.cost )
+    elseif newVal < self.last then --If we're removing ammo
+        GM.SpentPoints = GM.SpentPoints - ( newVal * self.cost ) + ( self.last * self.cost )
+    end
+    GM.CurrentLoadout.Ammo[ self.type ] = newVal
+end
+
+function AmmoWang:SetDecimals( num ) --No decimals
+    return 0
+end
+
+function AmmoWang:Think()
+    self:SetMax( self:GetValue() + math.Truncate( ( GM.TotalPoints - GM.SpentPoints ) / self.cost, 0 ) )
+end
+
+vgui.Create( "AmmoWang", AmmoWang, "DNumberWang" )
+
 --//
 
 local WeaponOptionPanel = {}
@@ -82,6 +113,7 @@ WeaponOptionPanel.class = ""
 WeaponOptionPanel.name = ""
 WeaponOptionPanel.model = ""
 WeaponOptionPanel.tablekey = ""
+WeaponOptionPanel.ammo = ""
 --[[WeaponOptionPanel.damage = 0
 WeaponOptionPanel.recoil = 0
 WeaponOptionPanel.rof = 0 --rate of fire
@@ -96,6 +128,7 @@ function WeaponOptionPanel:SetWeapon( newWeaponClass, weaponCost, weaponType, sp
     self.name = specialName or wep.PrintName
     self.model = specialModel or wep.WorldModel
     self.tablekey = weaponType
+    self.ammo = wep.Ammo
     --[[self.damage = wep.Damage
     self.recoil = wep.Recoil
     self.rof = wep.FireDelay
@@ -110,12 +143,12 @@ function WeaponOptionPanel:DoClick()
     if self.selected then --If we've selected the weapon and are clicking to remove it
         self.selected = false
         GM.SpentPoints = GM.SpentPoints - self.cost
-        GM.CurentLoadout.Weapons[ self.tablekey ][ self.class ] = false
+        GM.CurrentLoadout.Weapons[ self.tablekey ][ self.class ] = false
         surface.PlaySound( "buttons/deselect.wav" )
     elseif self.CanSelect then --If it wasn't selected and we are clicking to add it to our loadout
         self.selected = true
         GM.SpentPoints = GM.SpentPoints + self.cost
-        GM.CurentLoadout.Weapons[ self.tablekey ][ self.class ] = true
+        GM.CurrentLoadout.Weapons[ self.tablekey ][ self.class ] = true
         surface.PlaySound( "buttons/select.wav" )
     else --If it wasn't selected and we are clicking to add it to our loadout, but we don't have enough points
         if LocalPlayer():Team() == 1 then
@@ -142,14 +175,14 @@ function WeaponOptionPanel:OnRemove()
 end
 
 function WeaponOptionPanel:Think()
-    if not GM.CanSelect( self.cost ) then
+    if not GM:CanSelect( self.cost ) then
         self.CanSelect = true
     else
         self.CanSelect = false
     end
 end
 
-vgui.Register( "WeaponOptionPanel", WeaponOptionPanel, "DButton" ) --Aha! It is actually a button, not a simple panel
+vgui.Register( "WeaponOptionPanel", WeaponOptionPanel, "DPanel" )
 
 --//
 
@@ -203,12 +236,80 @@ vgui.Register( "WeaponsSidePanel", WeaponsSidePanel, "DPanel" )
 
 --//
 
-local OtherOptionPanel = WeaponOptionPanel
-OtherOptionPanel
+local ArmorOptionPanel = WeaponOptionPanel
+ArmorOptionPanel.description = ""
+
+function ArmorOptionPanel:SetArmor( newName, newDesc, newCost )
+    self.name = newName
+    self.description = newDesc
+    self.cost = newCost
+end
+
+function ArmorOptionPanel:DoClick()
+    if GM.CurrentLoadout.Armor == self.name then return end --If it's already selected, do nothing
+    if self.CanSelect then --If it isn't selected and we are clicking to add it to our loadout
+        self.selected = true
+        GM.SpentPoints = GM.SpentPoints + self.cost - ( GM.CurrentArmorCost or 0 )
+        GM.CurrentLoadout.Armor = self.name
+        GM.CurrentArmorCost = self.cost
+        surface.PlaySound( "buttons/select.wav" )
+    else --If it wasn't selected and we are clicking to add it to our loadout, but we don't have enough points
+        if LocalPlayer():Team() == 1 then
+            surface.PlaySound( "button8.wav" )
+        else
+            surface.PlaySound( "combine_button_locked.wav" )
+        end
+    end
+end
+
+function ArmorOptionPanel:Think() --Have to do this unique, since we're locking armor to only 1 option
+    if not GM:CanSelect( ( self.cost - ( self.CurrentArmorCost or 0 ) ) ) then
+        self.CanSelect = true
+    else
+        self.CanSelect = false
+    end
+end
+
+function ArmorOptionPanel:Paint()
+
+end
+
+vgui.Register( "ArmorOptionPanel", ArmorOptionPanel, "DPanel")
 
 --//
 
-local PerksPanel = {}
+local PerksPanel = WeaponOptionPanel
+PerksPanel.description = ""
+
+function PerksPanel:SetPerk( newName, newDesc, newCost )
+    self.name = newName
+    self.description = newDesc
+    self.cost = newCost
+end
+
+function PerksPanel:DoClick()
+    if self.selected then --If we've selected the perk and are clicking to remove it
+        self.selected = false
+        GM.SpentPoints = GM.SpentPoints - self.cost
+        GM.CurrentLoadout.Perks[ self.name ] = false
+        surface.PlaySound( "buttons/deselect.wav" )
+    elseif self.CanSelect then --If it wasn't selected and we are clicking to add it to our loadout
+        self.selected = true
+        GM.SpentPoints = GM.SpentPoints + self.cost
+        GM.CurrentLoadout.Perks[ self.name ] = true
+        surface.PlaySound( "buttons/select.wav" )
+    else --If it wasn't selected and we are clicking to add it to our loadout, but we don't have enough points
+        if LocalPlayer():Team() == 1 then
+            surface.PlaySound( "button8.wav" )
+        else
+            surface.PlaySound( "combine_button_locked.wav" )
+        end
+    end
+end
+
+function PerksPanel:Paint()
+
+end
 
 
 vgui.Register( "PerksPanel", PerksPanel, "DPanel" )

@@ -50,12 +50,12 @@ if SERVER then
                 if isnumber( self.WeaponsTable[ k ][ k2 ][ ply:Team() ] ) then --If the player is allowed to have it
                     runningTotal = runningTotal + self.WeaponsTable[ k ][ k2 ][ ply:Team() ] --Keep track of points spent
                 else --If the player is sending a bad table, we need to know
-                    k2 = false
+                    v2 = false
                     error( "Player attempted loadout with non-role weapon! Player " .. ply:Nick() .. " is possible cheater.", 1 )
                 end
-                return runningTotal
             end
         end
+        return runningTotal
     end
 
     function GM:VerifyArmor( ply, runningTotal )
@@ -75,7 +75,7 @@ if SERVER then
             if isnumber( self.AmmoTable[ k ][ ply:Team() ] ) then
                 runningTotal = runningTotal + ( self.AmmoTable[ k ][ ply:Team() ] * v )
             else
-                k = 0
+                v = 0
                 error( "Player attempted loadout with non-role ammo! Player " .. ply:Nick() .. " is possible cheater.", 1 )
             end
         end
@@ -87,7 +87,7 @@ if SERVER then
             if isnumber( self.PerksTable[ k ][ ply:Team() ] ) then
                 runningTotal = runningTotal + self.PerksTable[ k ][ ply:Team() ]
             else
-                k = false
+                v = false
                 error( "Player attempted loadout with non-role perk! Player " .. ply:Nick() .. " is possible cheater.", 1 )
             end
         end
@@ -115,10 +115,10 @@ GM.WeaponsTable = { --Points required for: team 1, team 2, team 3. 0 = No Cost/D
 }
 
 GM.AmmoTable = { --4th value is how much exra ammo you get
-    [ "item_ammo_357" ] = { nil, 1, nil, 12 },
-    [ "item_ammo_smg1" ] = { nil, 1, nil, 90 },
-    [ "item_ammo_ar2" ] = { nil, 1, nil, 60 },
-    [ "item_box_buckshot" ] = { nil, 1, nil, 12 },
+    [ "item_ammo_357" ] = { 1, 1, nil, 12 },
+    [ "item_ammo_smg1" ] = { 1, 1, nil, 90 },
+    [ "item_ammo_ar2" ] = { 1, 1, nil, 60 },
+    [ "item_box_buckshot" ] = { 1, 1, nil, 12 },
     [ "item_ammo_smg1_grenade" ] = { nil, 3, nil, 2 },
     [ "item_ammo_ar2_altfire" ] = { nil, 3, nil, 2 }
 }

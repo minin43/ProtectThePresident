@@ -1,16 +1,13 @@
---[[  FORMAT
-    Points == 0 // The number of points the player can spend on the below weapons & perks
+GM.CurrentLoadout = {
     Weapons = {
-        Primary = {} // All the primary weapons the player can use
-        Secondary = {} // All the secondary weapons the player can use
-        Tertiary = {} // All the tertiary weapons the player can use
-    }
-    Armor = {} // All armor types
-    Ammo = {} //All additional ammo by type
-    Perks = {} // All the available perks (and handicap removals) the player can choose
-]]
-GM.CurentLoadout = {} --Same format as above, we're just sending it to the server
-
+        Primary = {},
+        Secondary = {},
+        Tertiary = {}
+    },
+    Ammo = {},
+    Perks = {},
+    Armor = ""
+}
 
 function GM:PlayIntroSoundSequence()
     if LocalPlayer():Team() == 1 then
@@ -94,7 +91,7 @@ function GM:StandardRoleIntro()
             timer.Simple( self.RoundSetupLength, function() --After the round setup is finished, force close loadout menu
                 self.Main:Remove()
                 net.Send( "SetLoadout" )
-                    net.WriteTable( self.CurentLoadout )
+                    net.WriteTable( self.CurrentLoadout )
                 net.SendToServer()
             end )
         end )
@@ -123,11 +120,52 @@ function GM:StartLoadout( initialLoadout )
         self.SecondMain:SetPos()
         self.SecondMain:SetSize()
 
-        self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
-        self.SecondMainLeft:SetWeaponsLists( self.WeaponsTable.Primary, self.WeaponsTable.Secondary, self.WeaponsTable.Tertiary ) --Just realized, we haven't filtered out restricted items
+        local LeftSize, LeftPos, RightSize, RightPos = {}, {}, {}, {}
+        if LocalPlayer():Team() == 3 then --If the player is the president, don't display the weapons panel, otherwise do
+            LeftSize[ 1 ] = 0
+            LeftSize[ 2 ] = 0
+            LeftPos[ 1 ] = 0
+            LeftPos[ 2 ] = 0
 
-        self.SecondMainRight = vgui.Create( "", self.SecondMain )
+            RightSize[ 1 ] = self.SecondMain:GetWide()
+            RightSize[ 2 ] = self.SecondMain:GetTall()
+            RightPos[ 1 ] = 0
+            RightPos[ 2 ] = 0
+        else
+            LeftSize[ 1 ] = self.SecondMain:GetWide() / 2
+            LeftSize[ 2 ] = self.SecondMain:GetTall()
+            LeftPos[ 1 ] = 0
+            LeftPos[ 2 ] = 0
+
+            RightSize[ 1 ] = self.SecondMain:GetWide() / 2
+            RightSize[ 2 ] = self.SecondMain:GetTall()
+            RightPos[ 1 ] = self.SecondMain:GetWide() / 2
+            RightPos[ 2 ] = 0
+        end
+
+        self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
+        self.SecondMainLeft:SetSize( LeftSize[ 1 ], LeftSize[ 2 ] )
+        self.SecondMainLeft:SetPos( LeftPos[ 1 ], LeftPos[ 2 ] )
+        self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
+
+        self.SecondMainRight = vgui.Create( "PerksSidePanel", self.SecondMain )
+        self.SecondMainRight:SetSize( RightSize[ 1 ], RightSize[ 2 ] )
+        self.SecondMainRight:SetPos( RightPos[ 1 ], RightPos[ 2 ] )
+        self.SecondMainRight:SetPerksArmorLists( self:FilterTableByTeam( self.ArmorTable ), self:FilterTableByTeam( self.PerksTable ) )
     end )
+end
+
+function GM:FilterTableByTeam( UnfilteredTable )
+    local position = LocalPlayer():Team()
+    local FilteredTable = {}
+
+    for k, v in pairs( UnfilteredTable ) do
+        if isnumber( v[ position ] ) then
+            FilteredTable[ k ] = v
+        end
+    end
+
+    return FilteredTable
 end
 
 --//Disables players from typing during round intro sequence
