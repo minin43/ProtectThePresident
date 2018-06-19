@@ -1,7 +1,7 @@
 --//This file is strictly for creating/registering custom vgui elements
 
 --//Immedaitely add a draw function after having said that - Yes, I got this off the garry's mod wiki
-function draw.FilledCircle( x, y, radius, seg )
+function draw.FilledCircle( x, y, radius, seg ) --"seg" is the amount of segments in the circle
 	local cir = {}
 
 	table.insert( cir, { x = x, y = y, u = 0.5, v = 0.5 } )
@@ -78,7 +78,8 @@ vgui.Register( "RolePanel", RolePanel, "DPanel" )
 local AmmoWang = {}
 AmmoWang.type = ""
 AmmoWang.cost = 0
-AmmoWang.last = 0
+AmmoWang.lastval = 0
+AmmoWang.totalammo = 0
 
 function AmmoWang:SetAmmo( newType, newCost )
     self.type = newType
@@ -87,13 +88,16 @@ function AmmoWang:SetAmmo( newType, newCost )
     self:SetMin( 0 )
 end
 
-function AmmoWang:OnValueChanged( newVal ) --This is seen as an event call, but doesn't override functionality
-    if newVal > self.last then --If we're adding ammo
-        GM.SpentPoints = GM.SpentPoints + ( newVal * self.cost ) - ( self.last * self.cost )
-    elseif newVal < self.last then --If we're removing ammo
-        GM.SpentPoints = GM.SpentPoints - ( newVal * self.cost ) + ( self.last * self.cost )
+function AmmoWang:OnValueChanged( newVal, skipLogic ) --This is seen as an event call, but doesn't override functionality
+    if not skipLogic then --If we want to skip editing the SpentPoints and CurrentLoadout.Ammo
+        if newVal > self.lastval then --If we're adding ammo
+            GM.SpentPoints = GM.SpentPoints + ( newVal * self.cost ) - ( self.lastval * self.cost )
+        elseif newVal < self.lastval then --If we're removing ammo
+            GM.SpentPoints = GM.SpentPoints - ( newVal * self.cost ) + ( self.lastval * self.cost )
+        end
+        
+        GM.CurrentLoadout.Ammo[ self.type ] = GM.CurrentLoadout.Ammo[ self.type ] + ( newVal - self.last )
     end
-    GM.CurrentLoadout.Ammo[ self.type ] = newVal
 end
 
 function AmmoWang:SetDecimals( num ) --No decimals
@@ -101,7 +105,15 @@ function AmmoWang:SetDecimals( num ) --No decimals
 end
 
 function AmmoWang:Think()
-    self:SetMax( self:GetValue() + math.Truncate( ( GM.TotalPoints - GM.SpentPoints ) / self.cost, 0 ) )
+    self:SetMax( self:GetValue() + math.Truncate( ( GM.TotalPoints - GM.SpentPoints ) / self.cost, 0 ) ) --Dynamically alters the max value based on GM.SpentPoints
+
+    if self:GetValue() != GM.CurrentLoadout.Ammo[ self.type ] then --If DNumberWang's value isn't the same as GM.CurrentLoadout.Ammo[ self.type ], make it so
+        self:SetValue( GM.CurrentLoadout.Ammo[ self.type ], true )
+    end
+
+    --[[if self:GetValue() == self:GetMax() then --If we hit our max amount, remove the arrows
+        self:HideWang()
+    end -commented out because I think it hides the arrows automatically]]
 end
 
 vgui.Create( "AmmoWang", AmmoWang, "DNumberWang" )
@@ -119,6 +131,7 @@ WeaponOptionPanel.recoil = 0
 WeaponOptionPanel.rof = 0 --rate of fire
 WeaponOptionPanel.magazine = 0 --base magazine size]]
 WeaponOptionPanel.cost = 0
+WeaponOptionPanel.ammowang = vgui.Create( "AmmoWang", WeaponOptionPanel )
 
 function WeaponOptionPanel:SetWeapon( newWeaponClass, weaponCost, weaponType, specialName, specialModel )
     self.class = newWeaponClass
@@ -133,10 +146,32 @@ function WeaponOptionPanel:SetWeapon( newWeaponClass, weaponCost, weaponType, sp
     self.recoil = wep.Recoil
     self.rof = wep.FireDelay
     self.magazine = wep.ClipSize]]
+    self.ammowang = vgui.Create( "AmmoWang", self )
+    self.ammowang:SetDecimals( 0 )
+    self.ammowang:SetAmmo( self.ammo, GM.AmmoTable[ self.ammo ][ LocalPlayer():Team() ] )
+    self.ammowang:SetSize( 10, 5 )
+    self.ammowang:SetPos( self:GetWide() - self.ammowang:GetWide() - 4, self:GetTall() / 2 - ( self.ammowang:GetTall() / 2 ) )
 end
 
-function WeaponOptionPanel:Paint()
-    --To figure out...
+function WeaponOptionPanel:Paint() --Gonna be fuckin' ugly, but it'll do for now
+    surface.SetDrawColor( self.MyTheme.PrimaryColor.color ) --Panel background
+    surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+    surface.SetDrawColor( self.MyTheme.SecondaryColor.color ) --Panel background highlight
+    surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    surface.DrawCircle( 8, self:GetTall() / 2, 4, self.MyTheme.SecondaryColor.color )
+    draw.SimpleText( self.name, self.font, 16, self:GetTall() / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+    if self.hover then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    end
+
+    if self.selected then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+    end
 end
 
 function WeaponOptionPanel:DoClick()
@@ -198,31 +233,46 @@ function WeaponsSidePanel:SetWeaponsLists( primWeps, seconWeps, tertWeps )
     self.tertiaryWeapons = tertWeps
 
     self.ScrollPanelPrimary = vgui.Create( "DScrollPanel", self )
-    self.ScrollPanelPrimary:SetSize( self:GetWide(), self:GetTall() / 3 )
+    self.ScrollPanelPrimary:SetSize( self:GetWide() - 4, self:GetTall() / 3 - 4 )
     self.ScrollPanelPrimary:SetPos( 0, 0 )
+    self.ScrollPanelPrimary.Paint = function()
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self.ScrollPanelPrimary:GetWide() - 1, self.ScrollPanelPrimary:GetTall() - 1 )
+    end
 
     self.ScrollPanelSecondary = vgui.Create( "DScrollPanel", self )
-    self.ScrollPanelPrimary:SetSize( self:GetWide(), self:GetTall() / 3 )
-    self.ScrollPanelPrimary:SetPos( 0, self:GetTall() / 3 )
+    self.ScrollPanelSecondary:SetSize( self:GetWide() - 4, self:GetTall() / 3 - 4 )
+    self.ScrollPanelSecondary:SetPos( 0, self:GetTall() / 3 )
+    self.ScrollPanelSecondary.Paint = function()
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self.ScrollPanelSecondary:GetWide() - 1, self.ScrollPanelSecondary:GetTall() - 1 )
+    end
 
-    self.ScrollPanelTertiary= vgui.Create( "DScrollPanel", self )
-    self.ScrollPanelPrimary:SetSize( self:GetWide(), self:GetTall() / 3 )
-    self.ScrollPanelPrimary:SetPos( 0, self:GetTall() / 3 * 2 )
+    self.ScrollPanelTertiary = vgui.Create( "DScrollPanel", self )
+    self.ScrollPanelTertiary:SetSize( self:GetWide() - 4, self:GetTall() / 3 - 4 )
+    self.ScrollPanelTertiary:SetPos( 0, self:GetTall() / 3 * 2 )
+    self.ScrollPanelTertiary.Paint = function()
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self.ScrollPanelTertiary:GetWide() - 1, self.ScrollPanelTertiary:GetTall() - 1 )
+    end
 
     for k, v in pairs( self.primaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
+        wepPanel:SetSize( self.ScrollPanelPrimary:GetWide(), 40 )
         wepPanel:SetWeapon( k, v[ 1 ], "Primary", v[ 2 ], v[ 3 ] )
         wepPanel:Dock( TOP ) --Isn't this ascending? With the first at the bottom? I want it descending...
     end
 
     for k, v in pairs( self.secondaryWeapons ) do
-        local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
+        local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelSecondary )
+        wepPanel:SetSize( self.ScrollPanelSecondary:GetWide(), 40 )
         wepPanel:SetWeapon( k, v[ 1 ], "Secondary", v[ 2 ], v[ 3 ] )
         wepPanel:Dock( TOP )
     end
 
     for k, v in pairs( self.tertiaryWeapons ) do
-        local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
+        local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelTertiary )
+        wepPanel:SetSize( self.ScrollPanelTertiary:GetWide(), 40 )
         wepPanel:SetWeapon( k, v[ 1 ], "Tertiary", v[ 2 ], v[ 3 ] )
         wepPanel:Dock( TOP )
     end
@@ -230,6 +280,10 @@ end
 
 function WeaponsSidePanel:Paint()
     --I'm assuming we're going to want something to separate the three DScrollPanels, just simple lines, maybe?
+    surface.SetDrawColor( self.MyTheme.PrimaryColor.color )
+    surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+    --[[surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+    surface.DrawLine( 4, )]]
 end
 
 vgui.Register( "WeaponsSidePanel", WeaponsSidePanel, "DPanel" )

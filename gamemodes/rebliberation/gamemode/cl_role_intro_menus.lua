@@ -99,6 +99,15 @@ function GM:StandardRoleIntro()
 end
 
 function GM:StartLoadout( initialLoadout )
+    --//We want to choose a color theme for the menu
+    if LocalPlayer():Team() == 1 then
+        self.MyTheme = self.RebelThemes[ math.random( #self.RebelThemes ) ]
+    elseif LocalPlayer():Team() == 2
+        self.MyTheme = self.CombineThemes[ math.random( #self.CombineThemes ) ]
+    else
+        self.MyTheme = self.BreenThemes[ math.random( #self.BreenThemes ) ]
+    end
+
     net.Start( "StartedLoadout" )
     net.SendToServer()
 
@@ -141,12 +150,12 @@ function GM:StartLoadout( initialLoadout )
             RightSize[ 2 ] = self.SecondMain:GetTall()
             RightPos[ 1 ] = self.SecondMain:GetWide() / 2
             RightPos[ 2 ] = 0
-        end
 
-        self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
-        self.SecondMainLeft:SetSize( LeftSize[ 1 ], LeftSize[ 2 ] )
-        self.SecondMainLeft:SetPos( LeftPos[ 1 ], LeftPos[ 2 ] )
-        self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
+            self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
+            self.SecondMainLeft:SetSize( LeftSize[ 1 ], LeftSize[ 2 ] )
+            self.SecondMainLeft:SetPos( LeftPos[ 1 ], LeftPos[ 2 ] )
+            self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
+        end
 
         self.SecondMainRight = vgui.Create( "PerksSidePanel", self.SecondMain )
         self.SecondMainRight:SetSize( RightSize[ 1 ], RightSize[ 2 ] )

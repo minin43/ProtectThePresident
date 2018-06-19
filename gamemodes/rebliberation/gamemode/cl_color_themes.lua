@@ -5,7 +5,7 @@ GM.RebelThemes = {}
 GM.BreenThemes = {}
 
 --//Combine Themes
-GM.CombineThemes.ThemeOne = { --Metropolice Theme
+GM.CombineThemes[ 1 ] = { --Metropolice Theme
     PrimaryColor = { --Grey
         r = 50,
         g = 54,
@@ -31,7 +31,7 @@ GM.CombineThemes.ThemeOne = { --Metropolice Theme
         color = Color( 29, 35, 27 )
     }
 }
-GM.CombineThemes.ThemeTwo = { --Soldier Theme
+GM.CombineThemes[ 2 ] = { --Soldier Theme
     PrimaryColor = { --Slate grey
         r = 71,
         g = 63,
@@ -57,7 +57,7 @@ GM.CombineThemes.ThemeTwo = { --Soldier Theme
         color = Color( 37, 37, 30 )
     }
 }
-GM.CombineThemes.ThemeThree = { --Nova Prospect Soldier Theme
+GM.CombineThemes[ 3 ] = { --Nova Prospect Soldier Theme
     PrimaryColor = { --Dark blue
         r = 28,
         g = 27,
@@ -83,7 +83,7 @@ GM.CombineThemes.ThemeThree = { --Nova Prospect Soldier Theme
         color = Color( 130, 111, 73 )
     }
 }
-GM.CombineThemes.ThemeFour = { --Elite Soldier Theme
+GM.CombineThemes[ 4 ] = { --Elite Soldier Theme
     PrimaryColor = { --Milky white
         r = 135,
         g = 131,
@@ -111,7 +111,7 @@ GM.CombineThemes.ThemeFour = { --Elite Soldier Theme
 }
 
 --//Rebel Themes
-GM.RebelThemes.ThemeOne = { --Civilian Theme
+GM.RebelThemes[ 1 ] = { --Civilian Theme
     PrimaryColor = { --Dark blue
         r = 48,
         g = 70,
@@ -137,7 +137,7 @@ GM.RebelThemes.ThemeOne = { --Civilian Theme
         color = Color( 132, 141, 128 )
     }
 }
-GM.RebelThemes.ThemeTwo = { --Rebel Theme
+GM.RebelThemes[ 2 ] = { --Rebel Theme
     PrimaryColor = { --Dark grey
         r = 31,
         g = 31,
@@ -163,7 +163,7 @@ GM.RebelThemes.ThemeTwo = { --Rebel Theme
         color = Color( 69, 63, 41 )
     }
 }
-GM.RebelThemes.ThemeThree = { --Rebel Alternative Theme
+GM.RebelThemes[ 3 ] = { --Rebel Alternative Theme
     PrimaryColor = { --Forest green
         r = 60,
         g = 72,
@@ -189,7 +189,7 @@ GM.RebelThemes.ThemeThree = { --Rebel Alternative Theme
         color = Color( 69, 63, 41 )
     }
 }
-GM.RebelThemes.ThemeFour = { --Rebel Medic Theme
+GM.RebelThemes[ 4 ] = { --Rebel Medic Theme
     PrimaryColor = { --Bright grey
         r = 142,
         g = 143,
@@ -216,7 +216,7 @@ GM.RebelThemes.ThemeFour = { --Rebel Medic Theme
     }
 }
 
-GM.BreenThemes.ThemeOne = { --Standard Theme
+GM.BreenThemes[ 1 ] = { --Standard Theme
 PrimaryColor = { --Brown
     r = 49,
     g = 45,
