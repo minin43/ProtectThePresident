@@ -27,7 +27,7 @@ end
 
 --//This function is used to play the standard role "introduction" sequence for the player it's asked to run on - works dynamically, regardless of player's team
 function GM:StandardRoleIntro()
-    local CombineIDInfo
+    local CombineIDInfo = {}
     if LocalPlayer():Team() == 2 then --If we're a bodyguard, we're expecting some information regarding our combine ID
         CombineIDInfo = net.ReadTable()
     end
@@ -116,20 +116,22 @@ function GM:StartLoadout( initialLoadout )
         self.SpentPoints = self.SpentPoints or 0
 
         if initialLoadout then
-            self.SecondMain = vgui.Create( "LoadoutMenuPanel", self.Main )
+            self.SecondMain = vgui.Create( "DPanel", self.Main )
             self.Main:MakePopup()
+            self.SecondMain:SetPos()
+            self.SecondMain:SetSize()
         else
-            self.SecondMain = vgui.Create( "LoadoutMenuFrame" )
+            self.SecondMain = vgui.Create( "DFrame" )
             self.SecondMain:SetTitle( "" )
             self.SecondMain:SetVisible( true )
             self.SecondMain:SetDraggable( false )
             self.SecondMain:ShowCloseButton( false )
             self.SecondMain:MakePopup()
+            self.SecondMain:SetPos()
+            self.SecondMain:SetSize()
         end
-        self.SecondMain:SetPos()
-        self.SecondMain:SetSize()
 
-        local LeftSize, LeftPos, RightSize, RightPos = {}, {}, {}, {}
+        --[[local LeftSize, LeftPos, RightSize, RightPos = {}, {}, {}, {}
         if LocalPlayer():Team() == 3 then --If the player is the president, don't display the weapons panel, otherwise do
             LeftSize[ 1 ] = 0
             LeftSize[ 2 ] = 0
@@ -155,7 +157,7 @@ function GM:StartLoadout( initialLoadout )
             self.SecondMainLeft:SetSize( LeftSize[ 1 ], LeftSize[ 2 ] )
             self.SecondMainLeft:SetPos( LeftPos[ 1 ], LeftPos[ 2 ] )
             self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
-        end
+        end]]
 
         self.SecondMainRight = vgui.Create( "PerksSidePanel", self.SecondMain )
         self.SecondMainRight:SetSize( RightSize[ 1 ], RightSize[ 2 ] )

@@ -1,5 +1,7 @@
 --//This file is strictly for creating/registering custom vgui elements
 
+GM.DefaultLoadoutItemSize = 40 --What height all the selectable items (weapons, armor, perks) are inside their scroll lists
+
 --//Immedaitely add a draw function after having said that - Yes, I got this off the garry's mod wiki
 function draw.FilledCircle( x, y, radius, seg ) --"seg" is the amount of segments in the circle
 	local cir = {}
@@ -222,7 +224,6 @@ vgui.Register( "WeaponOptionPanel", WeaponOptionPanel, "DPanel" )
 --//
 
 local WeaponsSidePanel = {}
-WeaponsSidePanel.font = "DermaDefault"
 WeaponsSidePanel.primaryWeapons = {}
 WeaponsSidePanel.secondaryWeapons = {}
 WeaponsSidePanel.tertiaryWeapons = {}
@@ -258,22 +259,22 @@ function WeaponsSidePanel:SetWeaponsLists( primWeps, seconWeps, tertWeps )
 
     for k, v in pairs( self.primaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelPrimary )
-        wepPanel:SetSize( self.ScrollPanelPrimary:GetWide(), 40 )
-        wepPanel:SetWeapon( k, v[ 1 ], "Primary", v[ 2 ], v[ 3 ] )
+        wepPanel:SetSize( self.ScrollPanelPrimary:GetWide(), self.DefaultLoadoutItemSize )
+        wepPanel:SetWeapon( k, v[ LocalPlayer():Team() ], "Primary" )
         wepPanel:Dock( TOP ) --Isn't this ascending? With the first at the bottom? I want it descending...
     end
 
     for k, v in pairs( self.secondaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelSecondary )
-        wepPanel:SetSize( self.ScrollPanelSecondary:GetWide(), 40 )
-        wepPanel:SetWeapon( k, v[ 1 ], "Secondary", v[ 2 ], v[ 3 ] )
+        wepPanel:SetSize( self.ScrollPanelSecondary:GetWide(), self.DefaultLoadoutItemSize )
+        wepPanel:SetWeapon( k, v[ LocalPlayer():Team() ], "Secondary" )
         wepPanel:Dock( TOP )
     end
 
     for k, v in pairs( self.tertiaryWeapons ) do
         local wepPanel = vgui.Create( "WeaponOptionPanel", self.ScrollPanelTertiary )
-        wepPanel:SetSize( self.ScrollPanelTertiary:GetWide(), 40 )
-        wepPanel:SetWeapon( k, v[ 1 ], "Tertiary", v[ 2 ], v[ 3 ] )
+        wepPanel:SetSize( self.ScrollPanelTertiary:GetWide(), self.DefaultLoadoutItemSize )
+        wepPanel:SetWeapon( k, v[ LocalPlayer():Team() ], "Tertiary" )
         wepPanel:Dock( TOP )
     end
 end
@@ -325,7 +326,24 @@ function ArmorOptionPanel:Think() --Have to do this unique, since we're locking 
 end
 
 function ArmorOptionPanel:Paint()
+    surface.SetDrawColor( self.MyTheme.PrimaryColor.color ) --Panel background
+    surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+    surface.SetDrawColor( self.MyTheme.SecondaryColor.color ) --Panel background highlight
+    surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    surface.DrawCircle( 8, self:GetTall() / 2, 4, self.MyTheme.SecondaryColor.color )
+    draw.SimpleText( self.name .. " - " .. self.description, self.font, 16, self:GetTall() / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
+    if self.hover then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    end
+
+    if self.selected then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+    end
 end
 
 vgui.Register( "ArmorOptionPanel", ArmorOptionPanel, "DPanel")
@@ -362,7 +380,24 @@ function PerksPanel:DoClick()
 end
 
 function PerksPanel:Paint()
+    surface.SetDrawColor( self.MyTheme.PrimaryColor.color ) --Panel background
+    surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+    surface.SetDrawColor( self.MyTheme.SecondaryColor.color ) --Panel background highlight
+    surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    surface.DrawCircle( 8, self:GetTall() / 2, 4, self.MyTheme.SecondaryColor.color )
+    draw.SimpleText( self.name .. " - " .. self.description, self.font, 16, self:GetTall() / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
+    if self.hover then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self:GetWide() - 1, self:GetTall() - 1 )
+    end
+
+    if self.selected then
+        surface.SetDrawColor( self.MyTheme.PrimaryHighlightColor.color )
+        draw.FilledCircle( 8, self:GetTall() / 2, 4, 1 )
+    end
 end
 
 
@@ -370,14 +405,71 @@ vgui.Register( "PerksPanel", PerksPanel, "DPanel" )
 
 --//
 
-local LoadoutMenuPanel = {} --We have a panel version of the loadout menu, for when it's initially used after the round intro
+local PerksSidePanel = {}
+PerksSidePanel.armortable = {}
+PerksSidePanel.perktable = {}
 
+function PerksSidePanel:SetLists( newArmor, newPerk )
+    self.armortable = newArmor
+    self.perktable = newPerk
+
+    self.ScrollPanelArmor = vgui.Create( "DScrollPanel", self )
+    self.ScrollPanelArmor:SetSize( self:GetWide(), self:GetTall() / 3 )
+    self.ScrollPanelArmor:SetPos( 0, 0 )
+    self.ScrollPanelArmor.Paint = function()
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self.ScrollPanelArmor:GetWide() - 1, self.ScrollPanelArmor:GetTall() - 1 )
+    end
+
+    self.ScrollPanelPerks = vgui.Create( "DScrollPanel", self )
+    self.ScrollPanelPerks:SetSize( self:GetWide(), self:GetTall() / 3 * 2 )
+    self.ScrollPanelPerks:SetPos( 0, self:GetTall() / 3 )
+    self.ScrollPanelPerks.Paint = function()
+        surface.SetDrawColor( self.MyTheme.SecondaryHighlightColor.color )
+        surface.DrawOutlinedRect( 0, 0, self.ScrollPanelPerks:GetWide() - 1, self.ScrollPanelPerks:GetTall() - 1 )
+    end
+
+    for k, v in pairs( self.armortable ) do
+        local armorPanel = vgui.Create( "ArmorOptionPanel", self.ScrollPanelArmor )
+        armorPanel:SetSize( self.ScrollPanelArmor:GetWide(), self.DefaultLoadoutItemSize )
+        armorPanel:SetArmor( k, v[ 4 ], v[ LocalPlayer():Team() ] )
+        armorPanel:Dock( TOP )
+    end
+
+    for k, v in pairs( self.perktable ) do
+        local perkPanel = vgui.Create( "PerksPanel", self.ScrollPanelPerks )
+        perkPanel:SetSize( self.ScrollPanelPerks:GetWide(), self.DefaultLoadoutItemSize )
+        perkPanel:SetPerk( k, v[ 4 ], v[ LocalPlayer():Team() ] )
+        perkPanel:Dock( TOP )
+    end
+end
+
+function PerksSidePanel:Paint()
+    surface.SetDrawColor( self.MyTheme.PrimaryColor.color )
+    surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+end
+
+vgui.Register( "PerksSidePanel", PerksSidePanel, "DPanel" )
+
+--[[local LoadoutMenuPanel = {} --We have a panel version of the loadout menu, for when it's initially used after the round intro
+
+function LoadoutMenuPanel:Init()
+    local leftPanel, rightPanel = false, vgui.Create( "PerksSidePanel", self )
+    if LocalPlayer():Team() != 3 then --If player isn't president - we want to allow weapons selection
+        self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self )
+        self.SecondMainLeft:SetSize(  )
+        self.SecondMainLeft:SetPos(  )
+        self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
+    end
+
+    if leftPanel then --If the player isn't president
+end
 
 vgui.Register( "LoadoutMenuPanel", LoadoutMenuPanel, "DPanel" )
 
 --//
 
-local LoadoutMenuFrame = {} --We have a frame version of the loadout menu, for when the terrorists die and change their loadout
+local LoadoutMenuFrame = LoadoutMenuPanel --We have a frame version of the loadout menu, for when the terrorists die and change their loadout
 
 
-vgui.Register( "LoadoutMenuFrame", LoadoutMenuFrame, "DPanel" )
+vgui.Register( "LoadoutMenuFrame", LoadoutMenuFrame, "DPanel" )]]
