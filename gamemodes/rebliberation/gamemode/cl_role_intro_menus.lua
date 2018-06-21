@@ -115,54 +115,66 @@ function GM:StartLoadout( initialLoadout )
         self.TotalPoints = net.ReadInt()
         self.SpentPoints = self.SpentPoints or 0
 
-        if initialLoadout then
+        if initialLoadout then --If we're opening the loadout during round prep
             self.SecondMain = vgui.Create( "DPanel", self.Main )
             self.Main:MakePopup()
-            self.SecondMain:SetPos()
-            self.SecondMain:SetSize()
-        else
+            self.SecondMain:SetPos( self.Main:GetWide() / 8, self.Main:GetTall() / 8 )
+            self.SecondMain:SetSize( self.Main:GetWide() / 4 * 3, self.Main:GetTall() / 4 * 3 )
+            self.SecondMain.Paint = function()
+                draw.SimpleText( LocalPlayer():Nick(), "DermaDefault", 52, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                draw.SimpleText( "Time left: ", "DermaDefault", self.SecondMain:GetWide() / 2, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER ) --To finish
+                draw.SimpleText( "Points Remaining: " .. ( self.TotalPoints - self.SpentPoints ), "DermaDefault", self.SecondMain:GetWide() - 4, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+            end
+        else --If it's in the middle of the round, it's gonna need to be a standalone frame
             self.SecondMain = vgui.Create( "DFrame" )
             self.SecondMain:SetTitle( "" )
             self.SecondMain:SetVisible( true )
             self.SecondMain:SetDraggable( false )
             self.SecondMain:ShowCloseButton( false )
             self.SecondMain:MakePopup()
-            self.SecondMain:SetPos()
-            self.SecondMain:SetSize()
+            self.SecondMain:Center()
+            self.SecondMain:SetSize( Scrw() / 4 * 3, ScrH() / 4 * 3 )
+            self.SecondMain.Paint = function()
+                draw.SimpleText( LocalPlayer():Nick(), "DermaDefault", 52, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+                draw.SimpleText( "Points Remaining: " .. ( self.TotalPoints - self.SpentPoints ), "DermaDefault", self.SecondMain:GetWide() - 4, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+            end
+
+            self.SecondMainButton = vgui.Create( "DButton", self.SecondMain )
+            self.SecondMainButton:SetPos()
+            self.SecondMainButton:SetSize()
+            self.SecondMainButton.DoClick = function()
+                net.Send( "SetLoadout" )
+                    net.WriteTable( self.CurrentLoadout )
+                net.SendToServer()
+                self.SecondMainButton:Close()
+            end
+            self.SecondMainButton.SetText( "Spawn" )
+            --[[self.SecondMainButton.Paint = function()
+
+            end]]
         end
 
-        --[[local LeftSize, LeftPos, RightSize, RightPos = {}, {}, {}, {}
-        if LocalPlayer():Team() == 3 then --If the player is the president, don't display the weapons panel, otherwise do
-            LeftSize[ 1 ] = 0
-            LeftSize[ 2 ] = 0
-            LeftPos[ 1 ] = 0
-            LeftPos[ 2 ] = 0
-
-            RightSize[ 1 ] = self.SecondMain:GetWide()
-            RightSize[ 2 ] = self.SecondMain:GetTall()
-            RightPos[ 1 ] = 0
-            RightPos[ 2 ] = 0
-        else
-            LeftSize[ 1 ] = self.SecondMain:GetWide() / 2
-            LeftSize[ 2 ] = self.SecondMain:GetTall()
-            LeftPos[ 1 ] = 0
-            LeftPos[ 2 ] = 0
-
-            RightSize[ 1 ] = self.SecondMain:GetWide() / 2
-            RightSize[ 2 ] = self.SecondMain:GetTall()
-            RightPos[ 1 ] = self.SecondMain:GetWide() / 2
-            RightPos[ 2 ] = 0
-
-            self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
-            self.SecondMainLeft:SetSize( LeftSize[ 1 ], LeftSize[ 2 ] )
-            self.SecondMainLeft:SetPos( LeftPos[ 1 ], LeftPos[ 2 ] )
-            self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
-        end]]
+        self.SecondMainAvatar = vgui.Create( "AvatarImage", self.SecondMain )
+        self.SecondMainAvatar:SetPlayer( LocalPlayer() )
+        self.SecondMainAvatar:SetSize( 50 - 4, 50 - 4 )
+        self.SecondMainAvatar:SetPos( 2, 2 )
 
         self.SecondMainRight = vgui.Create( "PerksSidePanel", self.SecondMain )
-        self.SecondMainRight:SetSize( RightSize[ 1 ], RightSize[ 2 ] )
-        self.SecondMainRight:SetPos( RightPos[ 1 ], RightPos[ 2 ] )
         self.SecondMainRight:SetPerksArmorLists( self:FilterTableByTeam( self.ArmorTable ), self:FilterTableByTeam( self.PerksTable ) )
+
+        if LocalPlayer():Team() != 3 then
+            self.SecondMainRight:SetSize( self.SecondMain:GetWide() / 2, self.SecondMain:GetTall() - 50 )
+            self.SecondMainRight:SetPos( self.SecondMain:GetWide() / 2, 50 )
+
+            self.SecondMainLeft = vgui.Create( "WeaponsSidePanel", self.SecondMain )
+            self.SecondMainLeft:SetSize( self.SecondMain:GetWide() / 2, self.SecondMain:GetTall() - 50 )
+            self.SecondMainLeft:SetPos( 0, 50 )
+            self.SecondMainLeft:SetWeaponsLists( self:FilterTableByTeam( self.WeaponsTable.Primary ), self:FilterTableByTeam( self.WeaponsTable.Secondary ), self:FilterTableByTeam( self.WeaponsTable.Tertiary ) )
+        else
+            self.SecondMainRight:SetSize( self.SecondMain:GetWide(), self.SecondMain:GetTall() - 50 )
+            self.SecondMainRight:SetPos( 0, 50 )
+        end
+
     end )
 end
 
