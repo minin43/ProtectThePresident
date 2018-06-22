@@ -1,4 +1,9 @@
 util.AddNetworkString( "RunRoleIntroductionNetMessage" )
+util.AddNetworkString( "OnGameStartHook" )
+util.AddNetworkString( "OnRoundSetupHook" )
+util.AddNetworkString( "OnRoundStartHook" )
+util.AddNetworkString( "OnRoundEndHook" )
+util.AddNetworkString( "OnGameEndHook" )
 
 GM.LastWinners = {}
 
@@ -97,6 +102,7 @@ function GM:StartGame()
         SetGlobalInt( "RoundTime", 0 )
     end )
     hook.Call( "OnGameStart", self )
+    net.Start( "OnGameStartHook" ) net.Send( player.GetAll() )
 end
 
 --//This function does the logic for the "pre-round," where players are put into their teams, notified of their role, and get to choose their loadout
@@ -114,6 +120,7 @@ function GM:SetupRound()
     end )
 
     hook.Call( "OnRoundSetup", self )
+    net.Start( "OnRoundSetupHook" ) net.Send( player.GetAll() )
 end
 
 --//This function starts the round - surprise!
@@ -155,6 +162,7 @@ function GM:StartRound()
     end )
 
     hook.Call( "OnRoundStart", self )
+    net.Start( "OnRoundStartHook" ) net.Send( player.GetAll() )
 end
 
 --//This function is called when a round has completed, and one of the sides is victorious
@@ -189,6 +197,7 @@ function GM:EndRound( WinningTeam )
     end )
 
     hook.Call( "OnRoundEnd", self )
+    net.Start( "OnRoundEndHook" ) net.Send( player.GetAll() )
 end
 
 function GM:EndGame()
@@ -199,4 +208,5 @@ function GM:EndGame()
     end
 
     hook.Call( "OnGameEnd", self )
+    net.Start( "OnGameEndHook" ) net.Send( player.GetAll() )
 end

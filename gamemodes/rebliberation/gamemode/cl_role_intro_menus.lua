@@ -1,3 +1,4 @@
+GM.SetupTimeLeft = 0
 GM.CurrentLoadout = {
     Weapons = {
         Primary = {},
@@ -26,7 +27,8 @@ function GM:PlayIntroSoundSequence()
 end
 
 --//This function is used to play the standard role "introduction" sequence for the player it's asked to run on - works dynamically, regardless of player's team
-function GM:StandardRoleIntro()
+--//NOTE: For testing, you can't just set to team 2, that requires running with a sent table
+    function GM:StandardRoleIntro()
     local CombineIDInfo = {}
     if LocalPlayer():Team() == 2 then --If we're a bodyguard, we're expecting some information regarding our combine ID
         CombineIDInfo = net.ReadTable()
@@ -79,7 +81,7 @@ function GM:StandardRoleIntro()
         self.MainRoleIntro:SetPos( 0, 0 )
         self.MainRoleIntro:SetTeam( LocalPlayer():Team(), IDTable )
 
-        timer.Simple( self.PreRoundSetupLength, function()
+        timer.Simple( self.PreRoundSetupLength - 2, function()
             self.MainRoleIntro:Remove()
             self:StartLoadout( true ) --< Called below
 
@@ -88,7 +90,7 @@ function GM:StandardRoleIntro()
             end
             self.DisableChatbox = false --Enable chatbox after intro
 
-            timer.Simple( self.RoundSetupLength, function() --After the round setup is finished, force close loadout menu
+            timer.Simple( self.RoundSetupLength - 2, function() --After the round setup is finished, force close loadout menu
                 self.Main:Remove()
                 net.Send( "SetLoadout" )
                     net.WriteTable( self.CurrentLoadout )
@@ -122,7 +124,7 @@ function GM:StartLoadout( initialLoadout )
             self.SecondMain:SetSize( self.Main:GetWide() / 4 * 3, self.Main:GetTall() / 4 * 3 )
             self.SecondMain.Paint = function()
                 draw.SimpleText( LocalPlayer():Nick(), "DermaDefault", 52, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
-                draw.SimpleText( "Time left: ", "DermaDefault", self.SecondMain:GetWide() / 2, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER ) --To finish
+                draw.SimpleText( "Time left: " .. self.SetupTimeLeft, "DermaDefault", self.SecondMain:GetWide() / 2, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER ) --To finish
                 draw.SimpleText( "Points Remaining: " .. ( self.TotalPoints - self.SpentPoints ), "DermaDefault", self.SecondMain:GetWide() - 4, 52 / 2, Color( 255, 255, 255 ), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
             end
         else --If it's in the middle of the round, it's gonna need to be a standalone frame

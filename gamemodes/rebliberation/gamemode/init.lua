@@ -1,8 +1,10 @@
+AddCSLuaFile( "cl_color_theme.lua" )
 AddCSLuaFile( "cl_combine_sounds.lua" )
 AddCSLuaFile( "cl_effects.lua" )
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_role_intro_menus.lua" )
 AddCSLuaFile( "cl_role_intro_menus_setup.lua" )
+AddCSLuaFile( "cl_round.lua" )
 AddCSLuaFile( "sh_loadout.lua" )
 AddCSLuaFile( "sh_setup.lua" )
 
@@ -13,6 +15,7 @@ include( "sv_class_terrorist.lua" )
 include( "sv_combine_sounds.lua" )
 include( "sv_points.lua" )
 include( "sv_round.lua" )
+include( "sh_loadout.lua" )
 include( "sh_setup.lua" )
 
 --// Constant variables related to game play can be found in sh_setup.lua //--
