@@ -19,7 +19,7 @@ net.Receive( "OnGameEndHook", function()
     hook.Call( "OnGameEnd", GAMEMODE )
 end )
 
---//When round is being set up, we want a client-side timer counting down until the round starts
+--//When round is being set up, we want a client-side timer counting down the time until the round starts
 --//Note that this ISN'T syncronized with the initial menu, despite the menu utilizing selfSetupTimeLeft
 hook.Add( "OnRoundSetup", function()
     self.SetupTimeLeft = self.PreRoundSetupLength + self.RoundSetupLength

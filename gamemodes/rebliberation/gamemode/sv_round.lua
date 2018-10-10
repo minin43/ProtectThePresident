@@ -14,7 +14,7 @@ end )
 
 hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
     if not GAMEMODE.GameInProgress then --If there isn't a game currently running
-        if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning is only just joining
+        if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning has only just joined
             print( ply:Nick() .. " has fully connected to the game." )
             for k, v in pairs( player.GetAll() ) do
                 v:ChatPrint( "[RL]: " .. ply:Nick() .. " has fully connected to the game." )
@@ -26,7 +26,7 @@ hook.Add( "PlayerSpawn", "InitialSpawn", function( ply )
             end
         end
     else --If there IS a game in progress
-        if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning is only just joining
+        if GAMEMODE.JoiningPlayers[ply:SteamID()] then --If the player spawning has only just joined
             print( ply:Nick() .. " has fully connected to the game." )
             for k, v in pairs( player.GetAll() ) do
                 v:ChatPrint( "[RL]: " .. ply:Nick() .. " has fully connected to the game." )
@@ -80,11 +80,12 @@ end
 --//Call this when any single or table of players needs their role indroduction played
 function GM:RunRoleIntroduction( ply )
     --if not self.GameInProgress then return end --Prevent this from being sent if game isn't running
-    --//^^^TEMPORARILY DISABLED WHILE I TEST IT^^^
+    --//^^^TEMPORARILY DISABLED WHILE I TEST THE GAMEMODE^^^
 
     --//We're to assume teams have already been assigned by the time this is run
     net.Start( "RunRoleIntroductionNetMessage" )
         if ply:Team() == 2 then
+            if not self.CombineSignatures[ ply:SteamID() ] then self:AssignCombineID( { ply } ) end
             net.WriteTable( self.CombineSignatures[ ply:SteamID() ] ) --If the player is a bodyguard, send them their combine ID
         end
     net.Send( ply )
@@ -93,6 +94,7 @@ end
 
 --//This function can be ran for any event where the game ought to start; by default, it's used when players spawn in - can be used in other fashions
 function GM:StartGame()
+    if self.GameInProgress then return end
     timer.Simple( self.AdditionalGameStartWaitTime, function()
         self.GameInProgress = true --If a game is in progress, used in determining starting/stopping of gamemode
         self.RoundInProgress = false --If a round is currently running, used in determining other logic
@@ -100,9 +102,10 @@ function GM:StartGame()
         self:SetupRound()
         self.CurrentRound = 0
         SetGlobalInt( "RoundTime", 0 )
+
+        hook.Call( "OnGameStart", self )
+        net.Start( "OnGameStartHook" ) net.Send( player.GetAll() )
     end )
-    hook.Call( "OnGameStart", self )
-    net.Start( "OnGameStartHook" ) net.Send( player.GetAll() )
 end
 
 --//This function does the logic for the "pre-round," where players are put into their teams, notified of their role, and get to choose their loadout
@@ -112,7 +115,7 @@ function GM:SetupRound()
 
     self.CurrentRound = self.CurrentRound + 1
 
-    self:RunRoleIntroduction( player.GetAll() ) --Quick developer note: function param is set as "ply" not a table, but net.Send can accept tables of players, so this still works
+    self:RunRoleIntroduction( player.GetAll() ) --Quick developer note: function param is set as "ply" not a table, but net.Send can accept tables, so this still works
     self:AssignStartingPoints()
 
     timer.Simple( self.PreRoundSetupLength + self.RoundSetupLength, function()

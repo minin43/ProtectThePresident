@@ -17,14 +17,16 @@ if SERVER then
     GM.VerifiedPlayerLoadouts = {}
 
     net.Receive( "StartedLoadout", function( len, ply )
+        GAMEMODE:AssignStartingPoints( ply ) --Only here temporarily
+        print( "SERVER received net message StartedLoadout from client ", ply, "Starting net message response StartedLoadoutCallback, sending int ", GAMEMODE.PlayerPoints[ ply:Team() ][ ply:SteamID() ] )
         net.Start( "StartedLoadoutCallback" )
-            net.WriteInt( 8, GM.PlayerPoints[ ply:Team() ][ ply:SteamID() ] )
+            net.WriteInt( 8, GAMEMODE.PlayerPoints[ ply:Team() ][ ply:SteamID() ] )
         net.Send( ply )
     end )
 
     net.Receive( "SendLoadout", function( len, ply )
-        GM.PlayerLoadouts[ ply:SteamID() ] = net.ReadTable()
-        GM:VerifyLoadout( ply )
+        GAMEMODE.PlayerLoadouts[ ply:SteamID() ] = net.ReadTable()
+        GAMEMODE:VerifyLoadout( ply )
     end )
 
     --//Function is used to verify that the client sent us a loadout it's allowed to have
@@ -99,7 +101,8 @@ GM.WeaponsTable = { --Points required for: team 1, team 2, team 3. 0 = No Cost/D
     Primary = {
         [ "weapon_smg1" ] = { 1, 1, nil },
         [ "weapon_ar2" ] = { 1, 1, nil },
-        [ "weapon_shotgun" ] = { 1, 1, nil }
+        [ "weapon_shotgun" ] = { 1, 1, nil },
+        [ "weapon_crossbow" ] = { nil, 1, nil }
     },
     Secondary = {
         [ "weapon_pistol" ] = { 0, 0, nil },
@@ -114,13 +117,15 @@ GM.WeaponsTable = { --Points required for: team 1, team 2, team 3. 0 = No Cost/D
     }
 }
 
-GM.AmmoTable = { --4th value is how much exra ammo you get
+GM.AmmoTable = { --1st int is point requirement for team 1, 2nd int for team 2, and 3 for 3. 4th value is how much exra of the ammo you get
+    [ "item_ammo_pistol" ] = { 1, 1, nil, 36 },
     [ "item_ammo_357" ] = { 1, 1, nil, 12 },
     [ "item_ammo_smg1" ] = { 1, 1, nil, 90 },
     [ "item_ammo_ar2" ] = { 1, 1, nil, 60 },
     [ "item_box_buckshot" ] = { 1, 1, nil, 12 },
     [ "item_ammo_smg1_grenade" ] = { nil, 3, nil, 2 },
-    [ "item_ammo_ar2_altfire" ] = { nil, 3, nil, 2 }
+    [ "item_ammo_ar2_altfire" ] = { nil, 3, nil, 2 },
+    [ "item_ammo_crossbow" ] = { nil, 2, nil, 5 }
 }
 
 GM.ArmorTable = { --4th value is the armor description
@@ -150,4 +155,15 @@ GM.PerksTable = { --4th value is the skill description
     [ "Stride Enhancement Device V.2" ] = { 1, 1, 1, "Increases the speed at which you can sprint." }, --Increase sprint speed
     [ "Respiratory Rejuvenation" ] = { 1, 1, 1, "Your red blood cells can carry more oxygen, increasing your body's stamina regenartion." }, --Decrease the time it takes to regain your stamina
     [ "Biometric 3D Locating" ] = { nil, 1, 1, "Mount a headpiece on yourself that allows you to see a 3D representation of your allies through walls." } --See teammates through walls
+}
+
+GM.HalfLifeWeaponsTable = {
+    [ "weapon_smg1" ] = {       [ "PrintName" ] = "SMG",             [ "Ammo" ] = "item_ammo_smg1",      [ "WorldModel" ] = "models/weapons/w_smg1.mdl" },
+    [ "weapon_ar2" ] = {        [ "PrintName" ] = "AR2",             [ "Ammo" ] = "item_ammo_ar2",       [ "WorldModel" ] = "models/weapons/w_irifle.mdl" },
+    [ "weapon_shotgun" ] = {    [ "PrintName" ] = "Shotgun",         [ "Ammo" ] = "item_box_buckshot",   [ "WorldModel" ] = "models/weapons/w_shotgun.mdl" },
+    [ "weapon_crossbow" ] = {   [ "PrintName" ] = "Crossbow",        [ "Ammo" ] = "item_ammo_crossbow",  [ "WorldModel" ] = "models/weapons/w_crossbow.mdl" },
+    [ "weapon_pistol" ] = {     [ "PrintName" ] = "Pistol",          [ "Ammo" ] = "item_ammo_pistol",    [ "WorldModel" ] = "models/weapons/w_pistol.mdl" },
+    [ "weapon_357" ] = {        [ "PrintName" ] = ".357 Magnum",     [ "Ammo" ] = "item_ammo_357",       [ "WorldModel" ] = "models/weapons/w_357.mdl" },
+    [ "weapon_frag" ] = {       [ "PrintName" ] = "Frag Grenades",   [ "Ammo" ] = "weapon_frag",         [ "WorldModel" ] = "models/weapons/w_grenade.mdl" },
+    [ "weapon_slam" ] = {       [ "PrintName" ] = "SLAM Mines",      [ "Ammo" ] = "weapon_slam",         [ "WorldModel" ] = "models/weapons/w_slam.mdl" }
 }

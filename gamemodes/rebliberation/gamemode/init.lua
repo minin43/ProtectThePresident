@@ -1,4 +1,4 @@
-AddCSLuaFile( "cl_color_theme.lua" )
+AddCSLuaFile( "cl_color_themes.lua" )
 AddCSLuaFile( "cl_combine_sounds.lua" )
 AddCSLuaFile( "cl_effects.lua" )
 AddCSLuaFile( "cl_init.lua" )
@@ -56,7 +56,7 @@ function GM:CheckGameValidityAfterPlayerLeave()
         end
     end
     if numberAlive == 0 then --If there's no players on the terrorist team
-        if #player.GetAll() < self.MinimumPlayers then --If there's not enough players in the game to even play
+        if #player.GetAll() < self.MinimumPlayers then --If there's not enough players in the game to even continue playing the game
             for k, ply in pairs( player.GetAll() ) do --Notify players
                 ply:ChatPrint( "[RL]: Someone left the game, there are now not enough players to continue playing." )
             end

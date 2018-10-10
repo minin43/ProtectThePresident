@@ -1,4 +1,4 @@
-include( "cl_color_theme.lua" )
+include( "cl_color_themes.lua" )
 include( "cl_combine_sounds.lua" )
 include( "cl_effects.lua" )
 include( "cl_role_intro_menus.lua" )

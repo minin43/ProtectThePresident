@@ -1,6 +1,6 @@
 GM.CombineSignatures = {}
 
-GM.CombineCallsigns = {
+GM.CombineCallsigns = { --Only callsigns we have sounds for
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "zero",
     "interlock", "jury", "king", "roller", "union", "upi", "vice", "victor", "xray", "yellow"
 }
